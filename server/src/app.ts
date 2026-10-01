@@ -14,6 +14,7 @@ import materialRoutes from "./routes/material.routes";
 import materialReceiptRoutes from "./routes/materialReceipt.routes";
 import paymentRoutes from "./routes/payment.routes";
 import expenseRoutes from "./routes/expense.routes";
+import contractRoutes from "./routes/contract.routes";
 
 import { errorHandler } from "./middleware/error.middleware";
 
@@ -70,6 +71,7 @@ app.use("/api/materials", materialRoutes);
 app.use("/api/material-receipts", materialReceiptRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/expenses", expenseRoutes);
+app.use("/api/contracts", contractRoutes);
 /**
  * Error handler MUST be last.
  */
