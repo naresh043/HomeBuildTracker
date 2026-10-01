@@ -12,6 +12,7 @@ import stageRoutes from "./routes/stage.routes";
 import vendorRoutes from "./routes/vendor.routes";
 import materialRoutes from "./routes/material.routes";
 import materialReceiptRoutes from "./routes/materialReceipt.routes";
+import paymentRoutes from "./routes/payment.routes";
 
 import { errorHandler } from "./middleware/error.middleware";
 
@@ -66,6 +67,7 @@ app.use("/api/stages", stageRoutes);
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/materials", materialRoutes);
 app.use("/api/material-receipts", materialReceiptRoutes);
+app.use("/api/payments", paymentRoutes);
 /**
  * Error handler MUST be last.
  */
