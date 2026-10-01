@@ -16,6 +16,8 @@ import paymentRoutes from "./routes/payment.routes";
 import expenseRoutes from "./routes/expense.routes";
 import contractRoutes from "./routes/contract.routes";
 import supplierAgreementRoutes from "./routes/supplierAgreement.routes";
+import receiptRoutes from "./routes/receipt.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
 
 import { errorHandler } from "./middleware/error.middleware";
 
@@ -74,6 +76,9 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/supplier-agreements", supplierAgreementRoutes);
+app.use("/api/receipts", receiptRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+
 
 /**
  * Error handler MUST be last.
