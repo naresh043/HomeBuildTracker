@@ -7,6 +7,8 @@ import { env } from "./config/env";
 
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
+import houseRoutes from "./routes/house.routes";
+import stageRoutes from "./routes/stage.routes";
 
 import { errorHandler } from "./middleware/error.middleware";
 
@@ -53,9 +55,11 @@ app.use(cookieParser());
 /**
  * Routes
  */
-app.use("/api/health", healthRoutes);
+app.use("/api/health", healthRoutes); 
 
 app.use("/api/auth", authRoutes);
+app.use("/api/house", houseRoutes);
+app.use("/api/stages", stageRoutes);
 
 /**
  * Error handler MUST be last.
