@@ -5,16 +5,15 @@ import { env } from "./config/env";
 const startServer = async (): Promise<void> => {
   await connectDB();
 
-  const server = app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${env.PORT}`);
-
     console.log(`Environment: ${env.NODE_ENV}`);
   });
 
   const shutdown = async (signal: string): Promise<void> => {
     console.log(`\n${signal} received. Shutting down...`);
 
-    server.close(async () => {
+    server.close(() => {
       process.exit(0);
     });
   };
@@ -30,6 +29,5 @@ const startServer = async (): Promise<void> => {
 
 startServer().catch((error) => {
   console.error("❌ Failed to start server:", error);
-
   process.exit(1);
 });
