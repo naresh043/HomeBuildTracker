@@ -99,21 +99,25 @@ function NavigationItem({
             className={[
               "flex shrink-0 items-center justify-center transition-all duration-150",
 
-              mobile ? "h-7 w-7 rounded-lg" : "h-8 w-8 rounded-lg",
+              mobile ? "h-10 w-10 rounded-lg" : "h-8 w-8 rounded-lg",
 
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-transparent text-muted-foreground group-hover:bg-background group-hover:text-foreground",
+              mobile
+                ? isActive
+                  ? "bg-transparent text-black"
+                  : "bg-transparent text-muted-foreground group-hover:bg-background group-hover:text-foreground"
+                : isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-transparent text-muted-foreground group-hover:bg-background group-hover:text-foreground",
             ].join(" ")}
           >
-            <Icon className={mobile ? "h-3.5 w-3.5" : "h-[17px] w-[17px]"} />
+            <Icon className={mobile ? "h-8 w-8" : "h-[17px] w-[17px]"} />
           </span>
 
           <span
             className={[
               "block min-w-0 max-w-full truncate leading-none",
               mobile
-                ? "w-full text-center text-[9px] font-medium"
+                ? "w-full text-center text-[12px] font-medium"
                 : "font-medium",
               isActive ? "font-semibold" : "",
             ]
@@ -321,13 +325,15 @@ export default function AppShell() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg px-0 py-1 text-[9px] font-medium leading-none text-muted-foreground transition-colors hover:text-foreground active:scale-[0.98]"
+                className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg px-0 py-1 text-[12px] font-medium leading-none text-muted-foreground transition-colors hover:text-foreground active:scale-[0.98]"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:bg-muted">
-                  <Menu className="h-3.5 w-3.5" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:bg-muted">
+                  <Menu className="h-8 w-8" />
                 </span>
 
-                <span className="w-full truncate text-center">More</span>
+                <span className="w-full truncate text-center text-[12px] font-medium">
+                  More
+                </span>
               </button>
             </div>
           </nav>
@@ -336,4 +342,3 @@ export default function AppShell() {
     </div>
   );
 }
-    
