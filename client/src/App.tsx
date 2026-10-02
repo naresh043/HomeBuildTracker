@@ -1,11 +1,18 @@
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+
+import AppRoutes from "@/routes/AppRoutes";
+
+import { initializeAuth } from "@/features/auth/authSlice";
+import { useAppDispatch } from "@/store/hooks";
 
 function App() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Button size="lg">Click Me</Button>
-    </div>
-  );
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    void dispatch(initializeAuth());
+  }, [dispatch]);
+
+  return <AppRoutes />;
 }
 
 export default App;
