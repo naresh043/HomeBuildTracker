@@ -117,10 +117,9 @@ HOUSE CONFIGURATION SCHEMA
 =====================================================
 */
 
-const houseConfigurationSchema =
-  new Schema<IHouseConfiguration>(
-    {
-      /*
+const houseConfigurationSchema = new Schema<IHouseConfiguration>(
+  {
+    /*
       -------------------------------------------------
       SINGLETON KEY
       -------------------------------------------------
@@ -131,29 +130,28 @@ const houseConfigurationSchema =
       multiple house configurations.
       */
 
-      singletonKey: {
-        type: String,
-        required: [true, "House configuration key is required"],
-        immutable: true,
-        default: HOUSE_CONFIGURATION_KEY,
-        
-      },
+    singletonKey: {
+      type: String,
+      required: [true, "House configuration key is required"],
+      immutable: true,
+      default: HOUSE_CONFIGURATION_KEY,
+    },
 
-      /*
+    /*
       -------------------------------------------------
       HOUSE NAME
       -------------------------------------------------
       */
 
-      name: {
-        type: String,
-        required: [true, "House name is required"],
-        trim: true,
-        minlength: [2, "House name must be at least 2 characters"],
-        maxlength: [150, "House name cannot exceed 150 characters"],
-      },
+    name: {
+      type: String,
+      required: [true, "House name is required"],
+      trim: true,
+      minlength: [2, "House name must be at least 2 characters"],
+      maxlength: [150, "House name cannot exceed 150 characters"],
+    },
 
-      /*
+    /*
       -------------------------------------------------
       LOCATION
       -------------------------------------------------
@@ -162,42 +160,42 @@ const houseConfigurationSchema =
       the exact house address for its accounting logic.
       */
 
-      location: {
-        type: String,
-        trim: true,
-        maxlength: [300, "Location cannot exceed 300 characters"],
-      },
+    location: {
+      type: String,
+      trim: true,
+      maxlength: [300, "Location cannot exceed 300 characters"],
+    },
 
-      /*
+    /*
       -------------------------------------------------
       CONSTRUCTION START DATE
       -------------------------------------------------
       */
 
-      startDate: {
-        type: Date,
-        required: [true, "House construction start date is required"],
-        default: DEFAULT_HOUSE_START_DATE,
-      },
+    startDate: {
+      type: Date,
+      required: [true, "House construction start date is required"],
+      default: DEFAULT_HOUSE_START_DATE,
+    },
 
-      /*
+    /*
       -------------------------------------------------
       HOUSE STATUS
       -------------------------------------------------
       */
 
-      status: {
-        type: String,
-        required: [true, "House status is required"],
-        enum: {
-          values: Object.values(HOUSE_STATUS),
-          message: "Invalid house status",
-        },
-        default: HOUSE_STATUS.IN_PROGRESS,
-        index: true,
+    status: {
+      type: String,
+      required: [true, "House status is required"],
+      enum: {
+        values: Object.values(HOUSE_STATUS),
+        message: "Invalid house status",
       },
+      default: HOUSE_STATUS.IN_PROGRESS,
+      index: true,
+    },
 
-      /*
+    /*
       -------------------------------------------------
       FLOORS
       -------------------------------------------------
@@ -209,16 +207,16 @@ const houseConfigurationSchema =
       hard-coded into the application.
       */
 
-      floors: {
-        type: [houseFloorSchema],
-        required: [true, "At least one floor is required"],
-        validate: {
-          validator: (floors: IHouseFloor[]) => floors.length > 0,
-          message: "House must contain at least one floor",
-        },
+    floors: {
+      type: [houseFloorSchema],
+      required: [true, "At least one floor is required"],
+      validate: {
+        validator: (floors: IHouseFloor[]) => floors.length > 0,
+        message: "House must contain at least one floor",
       },
+    },
 
-      /*
+    /*
       -------------------------------------------------
       BUDGET MINIMUM
       -------------------------------------------------
@@ -230,35 +228,35 @@ const houseConfigurationSchema =
       ₹25,00,000 = 250,000,000 paise
       */
 
-      budgetMin: {
-        type: Number,
-        required: [true, "Minimum budget is required"],
-        min: [0, "Minimum budget cannot be negative"],
-        default: DEFAULT_BUDGET_MIN_PAISE,
-        validate: {
-          validator: Number.isInteger,
-          message: "Minimum budget must be an integer number of paise",
-        },
+    budgetMin: {
+      type: Number,
+      required: [true, "Minimum budget is required"],
+      min: [0, "Minimum budget cannot be negative"],
+      default: DEFAULT_BUDGET_MIN_PAISE,
+      validate: {
+        validator: Number.isInteger,
+        message: "Minimum budget must be an integer number of paise",
       },
+    },
 
-      /*
+    /*
       -------------------------------------------------
       BUDGET MAXIMUM
       -------------------------------------------------
       */
 
-      budgetMax: {
-        type: Number,
-        required: [true, "Maximum budget is required"],
-        min: [0, "Maximum budget cannot be negative"],
-        default: DEFAULT_BUDGET_MAX_PAISE,
-        validate: {
-          validator: Number.isInteger,
-          message: "Maximum budget must be an integer number of paise",
-        },
+    budgetMax: {
+      type: Number,
+      required: [true, "Maximum budget is required"],
+      min: [0, "Maximum budget cannot be negative"],
+      default: DEFAULT_BUDGET_MAX_PAISE,
+      validate: {
+        validator: Number.isInteger,
+        message: "Maximum budget must be an integer number of paise",
       },
+    },
 
-      /*
+    /*
       -------------------------------------------------
       WORKING BUDGET
       -------------------------------------------------
@@ -267,16 +265,16 @@ const houseConfigurationSchema =
       budget range but do not require a working budget.
       */
 
-      workingBudget: {
-        type: Number,
-        min: [0, "Working budget cannot be negative"],
-        validate: {
-          validator: Number.isInteger,
-          message: "Working budget must be an integer number of paise",
-        },
+    workingBudget: {
+      type: Number,
+      min: [0, "Working budget cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Working budget must be an integer number of paise",
       },
+    },
 
-      /*
+    /*
       -------------------------------------------------
       CURRENT CONSTRUCTION STAGE
       -------------------------------------------------
@@ -287,16 +285,16 @@ const houseConfigurationSchema =
       It is optional during initial house creation.
       */
 
-      currentStageId: {
-        type: Schema.Types.ObjectId,
-        ref: "ConstructionStage",
-      },
+    currentStageId: {
+      type: Schema.Types.ObjectId,
+      ref: "ConstructionStage",
     },
-    {
-      timestamps: true,
-      versionKey: false,
-    },
-  );
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
 
 /*
 =====================================================
@@ -311,36 +309,30 @@ workingBudget <= budgetMax when provided
 =====================================================
 */
 
-houseConfigurationSchema.pre(
-  "validate",
-  function () {
-    if (this.budgetMin > this.budgetMax) {
+houseConfigurationSchema.pre("validate", function () {
+  if (this.budgetMin > this.budgetMax) {
+    this.invalidate(
+      "budgetMin",
+      "Minimum budget cannot be greater than maximum budget",
+    );
+  }
+
+  if (this.workingBudget !== undefined && this.workingBudget !== null) {
+    if (this.workingBudget < this.budgetMin) {
       this.invalidate(
-        "budgetMin",
-        "Minimum budget cannot be greater than maximum budget",
+        "workingBudget",
+        "Working budget cannot be less than minimum budget",
       );
     }
 
-    if (
-      this.workingBudget !== undefined &&
-      this.workingBudget !== null
-    ) {
-      if (this.workingBudget < this.budgetMin) {
-        this.invalidate(
-          "workingBudget",
-          "Working budget cannot be less than minimum budget",
-        );
-      }
-
-      if (this.workingBudget > this.budgetMax) {
-        this.invalidate(
-          "workingBudget",
-          "Working budget cannot be greater than maximum budget",
-        );
-      }
+    if (this.workingBudget > this.budgetMax) {
+      this.invalidate(
+        "workingBudget",
+        "Working budget cannot be greater than maximum budget",
+      );
     }
-  },
-);
+  }
+});
 
 /*
 =====================================================
@@ -362,8 +354,7 @@ MODEL
 =====================================================
 */
 
-export const HouseConfiguration =
-  model<IHouseConfiguration>(
-    "HouseConfiguration",
-    houseConfigurationSchema,
-  );
+export const HouseConfiguration = model<IHouseConfiguration>(
+  "HouseConfiguration",
+  houseConfigurationSchema,
+);

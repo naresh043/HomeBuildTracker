@@ -1,8 +1,4 @@
-import {
-  Document,
-  Schema,
-  model,
-} from "mongoose";
+import { Document, Schema, model } from "mongoose";
 
 import {
   VENDOR_STATUS,
@@ -174,9 +170,7 @@ vendorSchema.pre("validate", function () {
   if (this.name) {
     this.name = this.name.trim();
 
-    this.normalizedName = this.name
-      .replace(/\s+/g, " ")
-      .toLowerCase();
+    this.normalizedName = this.name.replace(/\s+/g, " ").toLowerCase();
   }
 });
 
@@ -260,7 +254,4 @@ vendorSchema.index(
  * ============================================================
  */
 
-export const Vendor = model<IVendor>(
-  "Vendor",
-  vendorSchema,
-);
+export const Vendor = model<IVendor>("Vendor", vendorSchema);
