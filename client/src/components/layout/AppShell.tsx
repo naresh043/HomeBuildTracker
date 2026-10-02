@@ -10,7 +10,12 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import { logout } from "@/features/auth/authSlice";
 import { useAppDispatch } from "@/store/hooks";
@@ -116,9 +121,11 @@ function NavigationItem({
           <span
             className={[
               "block min-w-0 max-w-full truncate leading-none",
+
               mobile
                 ? "w-full text-center text-[12px] font-medium"
                 : "font-medium",
+
               isActive ? "font-semibold" : "",
             ]
               .filter(Boolean)
@@ -134,12 +141,12 @@ function NavigationItem({
 
 function Sidebar({ onLogout }: { onLogout: () => void }) {
   return (
-    <aside className="hidden w-64 shrink-0 border-r bg-background lg:flex lg:flex-col">
+    <aside className="hidden h-screen w-64 shrink-0 overflow-hidden border-r bg-background lg:flex lg:flex-col">
       {/* =====================================================
           SIDEBAR BRAND
       ===================================================== */}
 
-      <div className="flex h-[70px] items-center border-b px-5">
+      <div className="flex h-[70px] shrink-0 items-center border-b px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Home className="h-[18px] w-[18px]" />
@@ -159,11 +166,16 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
 
       {/* =====================================================
           DESKTOP NAVIGATION
+
+          Only this section scrolls.
+
+          Logout stays outside this container so it remains
+          pinned to the bottom of the sidebar.
       ===================================================== */}
 
       <nav
         aria-label="Main navigation"
-        className="flex-1 space-y-1 overflow-y-auto p-4"
+        className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4"
       >
         {primaryNavigation.map((item) => (
           <NavigationItem key={item.path} {...item} />
@@ -178,9 +190,11 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
 
       {/* =====================================================
           LOGOUT
+
+          Always stays at the bottom of the sidebar.
       ===================================================== */}
 
-      <div className="border-t p-4">
+      <div className="shrink-0 border-t p-4">
         <button
           type="button"
           onClick={onLogout}
@@ -197,11 +211,63 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+function getPageContext(pathname: string) {
+  if (pathname === "/dashboard" || pathname === "/") {
+    return {
+      title: "Home",
+      subtitle: "Home construction overview",
+    };
+  }
+
+  if (pathname.startsWith("/payments")) {
+    return {
+      title: "Payments",
+      subtitle: "Track construction payments",
+    };
+  }
+
+  if (pathname.startsWith("/materials")) {
+    return {
+      title: "Materials",
+      subtitle: "Manage construction materials",
+    };
+  }
+
+  if (pathname.startsWith("/expenses")) {
+    return {
+      title: "Expenses",
+      subtitle: "Track construction expenses",
+    };
+  }
+
+  if (pathname.startsWith("/construction")) {
+    return {
+      title: "Construction",
+      subtitle: "Track construction progress",
+    };
+  }
+
+  if (pathname.startsWith("/settings")) {
+    return {
+      title: "Settings",
+      subtitle: "Manage application settings",
+    };
+  }
+
+  return {
+    title: "HomeBuild Tracker",
+    subtitle: "Home construction tracker",
+  };
+}
+
 export default function AppShell() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const pageContext = getPageContext(location.pathname);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -212,26 +278,43 @@ export default function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <div className="flex min-h-screen">
+    <div className="h-screen overflow-hidden bg-muted/30">
+      <div className="flex h-screen min-h-0">
         {/* ===================================================
             DESKTOP SIDEBAR
         =================================================== */}
 
         <Sidebar onLogout={handleLogout} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* ===================================================
+            RIGHT APPLICATION AREA
+
+            The application is constrained to the viewport.
+            Header stays outside the scrolling <main>.
+        =================================================== */}
+
+        <div className="flex h-screen min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {/* =================================================
-              MOBILE / TABLET HEADER
+              APPLICATION HEADER
+
+              Desktop:
+              Shows current page/context.
+
+              Mobile:
+              Shows HomeBuild Tracker branding.
           ================================================= */}
 
-          <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:px-6">
+          <header className="z-40 flex h-16 shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:h-[70px] lg:px-6">
             <div className="flex min-w-0 items-center gap-3">
+              {/* =================================================
+                  MOBILE BRANDING
+              ================================================= */}
+
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm lg:hidden">
                 <Home className="h-[18px] w-[18px]" />
               </div>
 
-              <div className="min-w-0">
+              <div className="min-w-0 lg:hidden">
                 <p className="truncate text-sm font-bold tracking-tight text-foreground">
                   HomeBuild Tracker
                 </p>
@@ -240,7 +323,28 @@ export default function AppShell() {
                   Home construction tracker
                 </p>
               </div>
+
+              {/* =================================================
+                  DESKTOP PAGE CONTEXT
+
+                  This avoids duplicating the sidebar's
+                  HomeBuild Tracker branding.
+              ================================================= */}
+
+              <div className="hidden min-w-0 lg:block">
+                <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+                  {pageContext.title}
+                </p>
+
+                <p className="truncate text-xs text-muted-foreground">
+                  {pageContext.subtitle}
+                </p>
+              </div>
             </div>
+
+            {/* =================================================
+                MOBILE MENU BUTTON
+            ================================================= */}
 
             <button
               type="button"
@@ -259,22 +363,28 @@ export default function AppShell() {
 
           {/* =================================================
               MOBILE MENU
-              
-              IMPORTANT:
-              This is ONLY the dropdown menu.
-              The fixed bottom navigation is NOT inside here.
+
+              The mobile header is 64px high, therefore this
+              menu starts at top-16.
+
+              Desktop never renders this menu.
           ================================================= */}
 
           {mobileMenuOpen && (
             <div className="fixed inset-x-0 top-16 z-30 border-b bg-background shadow-lg lg:hidden">
-              <nav aria-label="Mobile menu" className="space-y-1 p-4">
-                {[...primaryNavigation, ...secondaryNavigation].map((item) => (
-                  <NavigationItem
-                    key={item.path}
-                    {...item}
-                    onNavigate={() => setMobileMenuOpen(false)}
-                  />
-                ))}
+              <nav
+                aria-label="Mobile menu"
+                className="max-h-[calc(100vh-4rem-var(--mobile-nav-height))] space-y-1 overflow-y-auto p-4"
+              >
+                {[...primaryNavigation, ...secondaryNavigation].map(
+                  (item) => (
+                    <NavigationItem
+                      key={item.path}
+                      {...item}
+                      onNavigate={() => setMobileMenuOpen(false)}
+                    />
+                  ),
+                )}
 
                 <div aria-hidden="true" className="my-3 border-t" />
 
@@ -299,11 +409,14 @@ export default function AppShell() {
           {/* =================================================
               MAIN CONTENT
 
-              Reserve enough space for the fixed mobile
-              bottom navigation.
+              This is the ONLY desktop vertical scroll
+              container.
+
+              The header remains visible because it is
+              outside this scrolling element.
           ================================================= */}
 
-          <main className="min-w-0 flex-1 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom)+1rem)] lg:pb-0">
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom)+1rem)] lg:pb-0">
             <Outlet />
           </main>
 

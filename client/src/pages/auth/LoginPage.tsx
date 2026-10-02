@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Home, Loader2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { login, clearAuthError } from "@/features/auth/authSlice";
 import {
@@ -52,7 +53,18 @@ export default function LoginPage() {
     );
 
     if (login.fulfilled.match(result)) {
+      toast.success("Login successful.");
+
       navigate(redirectPath, { replace: true });
+      return;
+    }
+
+    if (login.rejected.match(result)) {
+      toast.error(
+        typeof result.payload === "string"
+          ? result.payload
+          : "Login failed. Please check your email and password.",
+      );
     }
   };
 

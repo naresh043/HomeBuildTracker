@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import "./index.css";
 
@@ -22,6 +23,12 @@ createRoot(rootElement).render(
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
           <App />
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            duration={3000}
+          />
         </QueryClientProvider>
       </Provider>
     </BrowserRouter>
