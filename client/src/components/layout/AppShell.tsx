@@ -8,9 +8,12 @@ import {
   Package,
   ReceiptText,
   Settings,
+  UsersRound,
   X,
 } from "lucide-react";
+
 import { useState } from "react";
+
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { logout } from "@/features/auth/authSlice";
@@ -49,6 +52,11 @@ const secondaryNavigation = [
     label: "Construction",
     path: "/construction",
     icon: BarChart3,
+  },
+  {
+    label: "Vendors",
+    path: "/vendors",
+    icon: UsersRound,
   },
   {
     label: "Settings",
@@ -255,6 +263,13 @@ function getPageContext(pathname: string) {
     };
   }
 
+  if (pathname.startsWith("/vendors")) {
+    return {
+      title: "Vendors",
+      subtitle: "Manage construction vendors",
+    };
+  }
+
   if (pathname.startsWith("/settings")) {
     return {
       title: "Settings",
@@ -298,7 +313,7 @@ export default function AppShell() {
             RIGHT APPLICATION AREA
 
             The application is constrained to the viewport.
-            Header stays outside the scrolling <main>.
+            Header stays outside the scrolling main.
         =================================================== */}
 
         <div className="flex h-screen min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

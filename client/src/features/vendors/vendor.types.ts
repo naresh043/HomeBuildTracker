@@ -29,6 +29,32 @@ export interface Vendor {
   updatedAt: string;
 }
 
+export interface CreateVendorRequest {
+  name: string;
+  type: VendorType;
+  status?: VendorStatus;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+}
+
+export interface UpdateVendorRequest {
+  name?: string;
+  type?: VendorType;
+  status?: VendorStatus;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+}
+
+export interface VendorResponse {
+  success: boolean;
+  message: string;
+  data: Vendor;
+}
+
 export interface VendorPagination {
   page: number;
   limit: number;
@@ -38,19 +64,29 @@ export interface VendorPagination {
   hasPreviousPage: boolean;
 }
 
-export interface VendorListData {
-  vendors: Vendor[];
-  pagination: VendorPagination;
-}
-
-export interface VendorListResponse {
+export interface VendorsResponse {
   success: boolean;
   message: string;
-  data: VendorListData;
+  data: {
+    vendors: Vendor[];
+    pagination: VendorPagination;
+  };
 }
 
-export interface VendorResponse {
+export interface ActiveVendorsResponse {
+  success: boolean;
+  message: string;
+  data: Vendor[];
+}
+
+export interface DeleteVendorResponse {
   success: boolean;
   message: string;
   data: Vendor;
+}
+
+export interface VendorListParams {
+  page?: number;
+  limit?: number;
+  includeDeleted?: boolean;
 }
