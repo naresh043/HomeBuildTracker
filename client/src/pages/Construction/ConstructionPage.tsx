@@ -113,7 +113,6 @@ export default function ConstructionPage() {
     createStageMutation.isPending || updateStageMutation.isPending;
 
   const isDeleting = deleteStageMutation.isPending;
-  const isRestoring = restoreStageMutation.isPending;
   const isReordering = reorderStagesMutation.isPending;
 
   const handleOpenCreate = () => {

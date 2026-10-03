@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 
-import { BarChart3, Package, ReceiptText, Settings } from "lucide-react";
+import {  Package, ReceiptText, Settings } from "lucide-react";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
