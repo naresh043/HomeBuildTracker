@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 
-import { Package, ReceiptText, Settings } from "lucide-react";
+import { ReceiptText, Settings } from "lucide-react";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -12,9 +12,9 @@ import LoginPage from "@/pages/auth/LoginPage";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 
-//* =========================================================*
-//* LAZY-LOADED APPLICATION PAGES*
-//* =========================================================*
+// =========================================================
+// LAZY-LOADED APPLICATION PAGES
+// =========================================================
 
 const DashboardPage = lazy(() => import("@/pages/Dashboard/DashboardPage"));
 
@@ -25,6 +25,8 @@ const ConstructionPage = lazy(
 );
 
 const VendorsPage = lazy(() => import("@/pages/Vendors/VendorsPage"));
+
+const MaterialsPage = lazy(() => import("@/pages/Materials/MaterialsPage"));
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
@@ -98,11 +100,7 @@ export default function AppRoutes() {
             path="/materials"
             element={
               <LazyPage>
-                <FeaturePlaceholderPage
-                  title="Materials"
-                  description="Manage construction materials and material received at the house."
-                  icon={Package}
-                />
+                <MaterialsPage />
               </LazyPage>
             }
           />

@@ -58,7 +58,7 @@ const VendorsPage = () => {
     const normalizedSearch = search.trim().toLowerCase();
 
     return vendors.filter((vendor) => {
-      if (!showDeleted && vendor.isDeleted) {
+      if (showDeleted && !vendor.isDeleted) {
         return false;
       }
 

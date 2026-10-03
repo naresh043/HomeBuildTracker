@@ -20,14 +20,29 @@ const VendorCard = ({
   onDelete,
   onRestore,
 }: VendorCardProps) => {
+  const isDeleted = vendor.isDeleted;
   const active = isVendorActive(vendor);
   const statusLabel = getVendorStatusDescription(vendor);
 
   return (
-    <article className="flex h-full w-full flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+    <article
+      className={[
+        "flex h-full w-full flex-col rounded-2xl border border-border bg-card p-4 shadow-sm",
+        isDeleted ? "opacity-75" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {/* Vendor Header */}
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700">
+        <div
+          className={[
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+            isDeleted
+              ? "bg-muted text-muted-foreground"
+              : "bg-muted text-foreground",
+          ].join(" ")}
+        >
           <UserRound
             className="h-5 w-5"
             aria-hidden="true"
@@ -35,11 +50,25 @@ const VendorCard = ({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-semibold text-gray-900">
+          <h3
+            className={[
+              "truncate text-base font-semibold",
+              isDeleted
+                ? "text-muted-foreground"
+                : "text-foreground",
+            ].join(" ")}
+          >
             {vendor.name}
           </h3>
 
-          <p className="mt-0.5 truncate text-sm text-gray-500">
+          <p
+            className={[
+              "mt-0.5 truncate text-sm",
+              isDeleted
+                ? "text-muted-foreground/80"
+                : "text-muted-foreground",
+            ].join(" ")}
+          >
             {getVendorTypeLabel(vendor.type)}
           </p>
         </div>
@@ -50,30 +79,41 @@ const VendorCard = ({
         <span
           className={[
             "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-            active
-              ? "bg-green-50 text-green-700"
-              : "bg-gray-100 text-gray-600",
+            isDeleted
+              ? "bg-destructive/10 text-destructive"
+              : active
+                ? "bg-green-50 text-green-700"
+                : "bg-muted text-muted-foreground",
           ].join(" ")}
         >
-          {statusLabel}
+          {isDeleted ? "Deleted" : statusLabel}
         </span>
-
-        {vendor.isDeleted && (
-          <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
-            Deleted
-          </span>
-        )}
       </div>
 
       {/* Contact Information */}
-      <div className="mt-4 space-y-3">
+      <div
+        className={[
+          "mt-4 space-y-3",
+          isDeleted ? "text-muted-foreground/80" : "",
+        ].join(" ")}
+      >
         {vendor.phone && (
           <a
             href={`tel:${vendor.phone}`}
-            className="flex min-h-10 min-w-0 items-center gap-3 text-sm text-gray-700"
+            className={[
+              "flex min-h-10 min-w-0 items-center gap-3 text-sm",
+              isDeleted
+                ? "text-muted-foreground"
+                : "text-foreground",
+            ].join(" ")}
           >
             <Phone
-              className="h-4 w-4 shrink-0 text-gray-400"
+              className={[
+                "h-4 w-4 shrink-0",
+                isDeleted
+                  ? "text-muted-foreground/70"
+                  : "text-muted-foreground",
+              ].join(" ")}
               aria-hidden="true"
             />
 
@@ -86,10 +126,20 @@ const VendorCard = ({
         {vendor.email && (
           <a
             href={`mailto:${vendor.email}`}
-            className="flex min-h-10 min-w-0 items-center gap-3 text-sm text-gray-700"
+            className={[
+              "flex min-h-10 min-w-0 items-center gap-3 text-sm",
+              isDeleted
+                ? "text-muted-foreground"
+                : "text-foreground",
+            ].join(" ")}
           >
             <Mail
-              className="h-4 w-4 shrink-0 text-gray-400"
+              className={[
+                "h-4 w-4 shrink-0",
+                isDeleted
+                  ? "text-muted-foreground/70"
+                  : "text-muted-foreground",
+              ].join(" ")}
               aria-hidden="true"
             />
 
@@ -100,9 +150,21 @@ const VendorCard = ({
         )}
 
         {vendor.address && (
-          <div className="flex min-w-0 items-start gap-3 text-sm text-gray-700">
+          <div
+            className={[
+              "flex min-w-0 items-start gap-3 text-sm",
+              isDeleted
+                ? "text-muted-foreground"
+                : "text-foreground",
+            ].join(" ")}
+          >
             <MapPin
-              className="mt-0.5 h-4 w-4 shrink-0 text-gray-400"
+              className={[
+                "mt-0.5 h-4 w-4 shrink-0",
+                isDeleted
+                  ? "text-muted-foreground/70"
+                  : "text-muted-foreground",
+              ].join(" ")}
               aria-hidden="true"
             />
 
@@ -115,8 +177,20 @@ const VendorCard = ({
 
       {/* Notes */}
       {vendor.notes && (
-        <div className="mt-4 rounded-xl bg-gray-50 p-3">
-          <p className="line-clamp-3 text-sm leading-5 text-gray-600">
+        <div
+          className={[
+            "mt-4 rounded-xl p-3",
+            isDeleted ? "bg-muted/50" : "bg-muted/50",
+          ].join(" ")}
+        >
+          <p
+            className={[
+              "line-clamp-3 text-sm leading-5",
+              isDeleted
+                ? "text-muted-foreground"
+                : "text-muted-foreground",
+            ].join(" ")}
+          >
             {vendor.notes}
           </p>
         </div>
@@ -124,13 +198,13 @@ const VendorCard = ({
 
       {/* Actions */}
       <div className="mt-auto pt-4">
-        <div className="flex gap-2 border-t border-gray-100 pt-4">
-          {!vendor.isDeleted ? (
+        <div className="flex gap-2 border-t border-border pt-4">
+          {!isDeleted ? (
             <>
               <button
                 type="button"
                 onClick={() => onEdit(vendor)}
-                className="min-h-10 flex-1 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 active:bg-gray-100"
+                className="min-h-10 flex-1 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring active:bg-muted"
               >
                 Edit
               </button>
@@ -138,7 +212,7 @@ const VendorCard = ({
               <button
                 type="button"
                 onClick={() => onDelete(vendor)}
-                className="min-h-10 flex-1 rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 active:bg-red-100"
+                className="min-h-10 flex-1 rounded-xl border border-destructive/20 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive/30 active:bg-destructive/10"
               >
                 Delete
               </button>
