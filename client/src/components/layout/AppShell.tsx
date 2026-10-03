@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Building2,
   CreditCard,
   Home,
   LogOut,
@@ -10,12 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  NavLink,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { logout } from "@/features/auth/authSlice";
 import { useAppDispatch } from "@/store/hooks";
@@ -25,6 +21,11 @@ const primaryNavigation = [
     label: "Home",
     path: "/dashboard",
     icon: Home,
+  },
+  {
+    label: "House",
+    path: "/house",
+    icon: Building2,
   },
   {
     label: "Payments",
@@ -219,6 +220,13 @@ function getPageContext(pathname: string) {
     };
   }
 
+  if (pathname.startsWith("/house")) {
+    return {
+      title: "House",
+      subtitle: "View house configuration",
+    };
+  }
+
   if (pathname.startsWith("/payments")) {
     return {
       title: "Payments",
@@ -376,15 +384,13 @@ export default function AppShell() {
                 aria-label="Mobile menu"
                 className="max-h-[calc(100vh-4rem-var(--mobile-nav-height))] space-y-1 overflow-y-auto p-4"
               >
-                {[...primaryNavigation, ...secondaryNavigation].map(
-                  (item) => (
-                    <NavigationItem
-                      key={item.path}
-                      {...item}
-                      onNavigate={() => setMobileMenuOpen(false)}
-                    />
-                  ),
-                )}
+                {[...primaryNavigation, ...secondaryNavigation].map((item) => (
+                  <NavigationItem
+                    key={item.path}
+                    {...item}
+                    onNavigate={() => setMobileMenuOpen(false)}
+                  />
+                ))}
 
                 <div aria-hidden="true" className="my-3 border-t" />
 

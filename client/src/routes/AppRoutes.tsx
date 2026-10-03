@@ -11,6 +11,7 @@ import {
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import LoginPage from "@/pages/auth/LoginPage";
+// import PaymentsPage from "@/pages/Payments/PaymentsPage";
 
 import AppShell from "@/components/layout/AppShell";
 import PageLoadingSkeleton from "@/components/layout/PageLoadingSkeleton";
@@ -23,6 +24,7 @@ import PublicRoute from "./PublicRoute";
 // =========================================================
 
 const DashboardPage = lazy(() => import("@/pages/Dashboard/DashboardPage"));
+const HousePage = lazy(() => import("@/pages/House/HousePage"));
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
@@ -59,14 +61,19 @@ export default function AppRoutes() {
           />
 
           <Route
+            path="/house"
+            element={
+              <LazyPage>
+                <HousePage />
+              </LazyPage>
+            }
+          />
+
+          <Route
             path="/payments"
             element={
               <LazyPage>
-                <FeaturePlaceholderPage
-                  title="Payments"
-                  description="Track money paid for construction materials, suppliers, contractors and other construction-related payments."
-                  icon={CreditCard}
-                />
+                {/* <PaymentsPage /> */} <h1>this is the payment page </h1>
               </LazyPage>
             }
           />
