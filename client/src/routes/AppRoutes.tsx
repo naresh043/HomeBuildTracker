@@ -1,19 +1,13 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 
-import {
-  BarChart3,
-  Package,
-  ReceiptText,
-  Settings,
-} from "lucide-react";
+import { BarChart3, Package, ReceiptText, Settings } from "lucide-react";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import LoginPage from "@/pages/auth/LoginPage";
-// import PaymentsPage from "@/pages/Payments/PaymentsPage";
-
 import AppShell from "@/components/layout/AppShell";
 import PageLoadingSkeleton from "@/components/layout/PageLoadingSkeleton";
+
+import LoginPage from "@/pages/auth/LoginPage";
 
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
@@ -23,13 +17,18 @@ import PublicRoute from "./PublicRoute";
 // =========================================================
 
 const DashboardPage = lazy(() => import("@/pages/Dashboard/DashboardPage"));
+
 const HousePage = lazy(() => import("@/pages/House/HousePage"));
+
+const ConstructionPage = lazy(
+  () => import("@/pages/Construction/ConstructionPage"),
+);
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
 );
 
-function LazyPage({ children }: { children: React.ReactNode }) {
+function LazyPage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<PageLoadingSkeleton />}>{children}</Suspense>;
 }
 
@@ -50,6 +49,10 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
+          {/* =================================================
+              DASHBOARD
+          ================================================= */}
+
           <Route
             path="/dashboard"
             element={
@@ -58,6 +61,10 @@ export default function AppRoutes() {
               </LazyPage>
             }
           />
+
+          {/* =================================================
+              HOUSE
+          ================================================= */}
 
           <Route
             path="/house"
@@ -68,14 +75,22 @@ export default function AppRoutes() {
             }
           />
 
+          {/* =================================================
+              PAYMENTS
+          ================================================= */}
+
           <Route
             path="/payments"
             element={
               <LazyPage>
-                {/* <PaymentsPage /> */} <h1>this is the payment page </h1>
+                <h1>This is the payment page</h1>
               </LazyPage>
             }
           />
+
+          {/* =================================================
+              MATERIALS
+          ================================================= */}
 
           <Route
             path="/materials"
@@ -90,6 +105,10 @@ export default function AppRoutes() {
             }
           />
 
+          {/* =================================================
+              EXPENSES
+          ================================================= */}
+
           <Route
             path="/expenses"
             element={
@@ -103,18 +122,22 @@ export default function AppRoutes() {
             }
           />
 
+          {/* =================================================
+              CONSTRUCTION
+          ================================================= */}
+
           <Route
             path="/construction"
             element={
               <LazyPage>
-                <FeaturePlaceholderPage
-                  title="Construction"
-                  description="Track construction stages and the current progress of your house."
-                  icon={BarChart3}
-                />
+                <ConstructionPage />
               </LazyPage>
             }
           />
+
+          {/* =================================================
+              SETTINGS
+          ================================================= */}
 
           <Route
             path="/settings"
