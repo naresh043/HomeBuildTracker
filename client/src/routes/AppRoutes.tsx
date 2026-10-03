@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 
 import {
   BarChart3,
-  CreditCard,
   Package,
   ReceiptText,
   Settings,
