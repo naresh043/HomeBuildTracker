@@ -13,9 +13,9 @@ export const paymentSchema = z
 
     paidByUserId: z.string().min(1, "Paid by user is required"),
 
-    paidToVendorId: z.string().min(1, "Vendor is required"),
+    paidToVendorId: z.string().optional(),
 
-    stageId: z.string().min(1, "Construction stage is required"),
+    stageId: z.string().optional(),
 
     paymentType: z.enum([
       "ADVANCE",
@@ -25,7 +25,7 @@ export const paymentSchema = z
       "OTHER",
     ]),
 
-    method: z.enum(["CASH", "UPI", "BANK_TRANSFER", "CHEQUE"]),
+    method: z.enum(["CASH", "UPI", "BANK", "CHEQUE", "OTHER"]),
 
     upiApp: z
       .enum(["PHONEPE", "GOOGLE_PAY", "PAYTM", "BHIM", "OTHER"])
@@ -56,6 +56,14 @@ export const paymentSchema = z
           message: "Transaction reference is required for UPI payments",
         });
       }
+    }
+
+    if (data.paymentType === "CONTRACT_PAYMENT" && !data.relatedContractId) {
+      ctx.addIssue({ code: "custom", path: ["relatedContractId"], message: "Related contract ID is required for contract payments" });
+    }
+
+    if ((data.paymentType === "MATERIAL_PAYMENT" || data.paymentType === "SERVICE_PAYMENT") && !data.paidToVendorId) {
+      ctx.addIssue({ code: "custom", path: ["paidToVendorId"], message: "Vendor is required for this payment type" });
     }
 
     if (data.method !== "UPI") {
