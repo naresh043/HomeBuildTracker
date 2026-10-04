@@ -31,6 +31,7 @@ const MaterialsPage = lazy(() => import("@/pages/Materials/MaterialsPage"));
 const MaterialReceiptsPage = lazy(
   () => import("@/pages/MaterialReceipts/MaterialReceiptsPage"),
 );
+const PaymentsPage = lazy(() => import("@/pages/Payments/PaymentsPage"));
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
@@ -91,7 +92,7 @@ export default function AppRoutes() {
             path="/payments"
             element={
               <LazyPage>
-                <h1>This is the payment page</h1>
+                <PaymentsPage />
               </LazyPage>
             }
           />

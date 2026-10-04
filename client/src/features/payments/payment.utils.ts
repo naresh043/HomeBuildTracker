@@ -16,8 +16,9 @@ export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   CASH: "Cash",
   UPI: "UPI",
-  BANK_TRANSFER: "Bank Transfer",
+  BANK: "Bank",
   CHEQUE: "Cheque",
+  OTHER: "Other",
 };
 
 export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {

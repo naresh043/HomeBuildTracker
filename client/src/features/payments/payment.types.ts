@@ -5,7 +5,7 @@ export type PaymentType =
   | "SERVICE_PAYMENT"
   | "OTHER";
 
-export type PaymentMethod = "CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE";
+export type PaymentMethod = "CASH" | "UPI" | "BANK" | "CHEQUE" | "OTHER";
 
 export type UpiApp = "PHONEPE" | "GOOGLE_PAY" | "PAYTM" | "BHIM" | "OTHER";
 
@@ -17,8 +17,8 @@ export interface Payment {
   date: string;
   amount: number;
 
-  paidByUserId: string;
-  paidToVendorId: string;
+  paidByUserId: string | null;
+  paidToVendorId: string | null;
 
   paymentType: PaymentType;
   method: PaymentMethod;
@@ -29,7 +29,7 @@ export interface Payment {
   relatedContractId: string | null;
   relatedSupplierAgreementId: string | null;
 
-  stageId: string;
+  stageId: string | null;
 
   receiptId: string | null;
 
@@ -74,8 +74,8 @@ export interface CreatePaymentRequest {
   date: string;
   amount: number;
   paidByUserId: string;
-  paidToVendorId: string;
-  stageId: string;
+  paidToVendorId?: string;
+  stageId?: string;
   paymentType: PaymentType;
   method: PaymentMethod;
 
@@ -117,4 +117,5 @@ export interface PaymentQueryParams {
   paymentType?: PaymentType;
   method?: PaymentMethod;
   hasReceipt?: boolean;
+  includeDeleted?: boolean;
 }

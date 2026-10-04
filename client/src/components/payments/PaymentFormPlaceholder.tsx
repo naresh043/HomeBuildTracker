@@ -46,9 +46,9 @@ const getInitialValues = (
     return {
       date: payment.date.slice(0, 10),
       amount: payment.amount,
-      paidByUserId: payment.paidByUserId,
-      paidToVendorId: payment.paidToVendorId,
-      stageId: payment.stageId,
+      paidByUserId: payment.paidByUserId ?? currentUserId,
+      paidToVendorId: payment.paidToVendorId ?? "",
+      stageId: payment.stageId ?? "",
       paymentType: payment.paymentType,
       method: payment.method,
       upiApp: payment.upiApp ?? undefined,
@@ -99,6 +99,7 @@ export default function PaymentFormPlaceholder({
   });
 
   const selectedMethod = watch("method");
+  const selectedType = watch("paymentType");
 
   useEffect(() => {
     reset(getInitialValues(payment, currentUserId));
@@ -165,6 +166,15 @@ export default function PaymentFormPlaceholder({
                 </p>
               )}
             </div>
+
+            {selectedType === "CONTRACT_PAYMENT" && (
+              <div>
+                <label htmlFor="payment-contract" className="mb-1.5 block text-sm font-medium">Related Contract ID</label>
+                <input id="payment-contract" {...register("relatedContractId")} placeholder="Enter contract ID" disabled={isSubmitting} className="h-11 w-full rounded-lg border bg-background px-3 text-sm" />
+                {errors.relatedContractId && <p className="mt-1.5 text-xs text-destructive">{errors.relatedContractId.message}</p>}
+                <p className="mt-1 text-xs text-muted-foreground">The backend requires a contract reference for contract payments.</p>
+              </div>
+            )}
 
             {/* Amount */}
             <div>

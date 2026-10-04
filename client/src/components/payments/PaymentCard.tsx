@@ -7,6 +7,7 @@ import {
   FileText,
   Smartphone,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import type { Payment } from "@/features/payments/payment.types";
 
@@ -20,35 +21,38 @@ import {
 
 interface PaymentCardProps {
   payment: Payment;
+  vendorName?: string;
+  stageName?: string;
   onClick?: (payment: Payment) => void;
 }
 
-const getMethodIcon = (method: Payment["method"]) => {
+const getMethodIcon = (method: Payment["method"]): ReactNode => {
   switch (method) {
     case "CASH":
-      return Banknote;
+      return <Banknote className="h-4 w-4 shrink-0 text-muted-foreground" />;
 
     case "UPI":
-      return Smartphone;
+      return <Smartphone className="h-4 w-4 shrink-0 text-muted-foreground" />;
 
-    case "BANK_TRANSFER":
-      return CreditCard;
+    case "BANK":
+      return <CreditCard className="h-4 w-4 shrink-0 text-muted-foreground" />;
 
     case "CHEQUE":
-      return FileText;
+      return <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />;
+
+    case "OTHER":
+      return <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />;
   }
 };
 
-export function PaymentCard({ payment, onClick }: PaymentCardProps) {
-  const MethodIcon = getMethodIcon(payment.method);
-
+export function PaymentCard({ payment, vendorName, stageName, onClick }: PaymentCardProps) {
   const isVerified = payment.verificationStatus === "VERIFIED";
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(payment)}
-      className="w-full rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/50 active:scale-[0.99]"
+      className={`w-full rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/50 active:scale-[0.99] ${payment.isDeleted ? "border-destructive/40 opacity-75" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -56,6 +60,7 @@ export function PaymentCard({ payment, onClick }: PaymentCardProps) {
             <h3 className="truncate text-sm font-semibold">
               {payment.paymentNo}
             </h3>
+            {payment.isDeleted && <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">Deleted</span>}
 
             {isVerified ? (
               <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
@@ -84,7 +89,7 @@ export function PaymentCard({ payment, onClick }: PaymentCardProps) {
         </div>
 
         <div className="flex min-w-0 items-center gap-2">
-          <MethodIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {getMethodIcon(payment.method)}
 
           <span className="truncate text-muted-foreground">
             {getPaymentMethodLabel(payment.method)}
@@ -99,6 +104,9 @@ export function PaymentCard({ payment, onClick }: PaymentCardProps) {
           </p>
         </div>
       )}
+
+      {payment.paidToVendorId && <p className="mt-3 truncate text-xs text-muted-foreground">Vendor: {vendorName ?? payment.paidToVendorId}</p>}
+      {payment.stageId && <p className="mt-1 truncate text-xs text-muted-foreground">Stage: {stageName ?? payment.stageId}</p>}
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="text-xs text-muted-foreground">
