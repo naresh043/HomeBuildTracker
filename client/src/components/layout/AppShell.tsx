@@ -7,6 +7,7 @@ import {
   Menu,
   Package,
   ReceiptText,
+  Truck,
   Settings,
   UsersRound,
   X,
@@ -43,6 +44,11 @@ const primaryNavigation = [
 ];
 
 const secondaryNavigation = [
+  {
+    label: "Material Receipts",
+    path: "/material-receipts",
+    icon: Truck,
+  },
   {
     label: "Expenses",
     path: "/expenses",
@@ -246,6 +252,13 @@ function getPageContext(pathname: string) {
     return {
       title: "Materials",
       subtitle: "Manage construction materials",
+    };
+  }
+
+  if (pathname.startsWith("/material-receipts")) {
+    return {
+      title: "Material Receipts",
+      subtitle: "Track materials received on site",
     };
   }
 
