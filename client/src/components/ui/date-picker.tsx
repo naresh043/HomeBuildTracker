@@ -11,6 +11,7 @@ interface DatePickerProps {
   placeholder?: string;
   minDate?: Date;
   maxDate?: Date;
+  ariaLabelledBy?: string;
 }
 
 export function DatePicker({
@@ -20,6 +21,7 @@ export function DatePicker({
   placeholder = "Select date",
   minDate,
   maxDate,
+  ariaLabelledBy,
 }: DatePickerProps) {
   const parsedDate = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
 
@@ -46,6 +48,7 @@ export function DatePicker({
     <div className="relative w-full">
       <details className="group">
         <summary
+          aria-labelledby={ariaLabelledBy}
           className={[
             "flex h-11 w-full list-none items-center gap-3 rounded-xl border",
             "bg-background px-3 text-sm outline-none transition-colors",

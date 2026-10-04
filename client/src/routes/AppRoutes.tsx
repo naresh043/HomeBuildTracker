@@ -28,6 +28,10 @@ const VendorsPage = lazy(() => import("@/pages/Vendors/VendorsPage"));
 
 const MaterialsPage = lazy(() => import("@/pages/Materials/MaterialsPage"));
 
+const MaterialReceiptsPage = lazy(
+  () => import("@/pages/MaterialReceipts/MaterialReceiptsPage"),
+);
+
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
 );
@@ -101,6 +105,15 @@ export default function AppRoutes() {
             element={
               <LazyPage>
                 <MaterialsPage />
+              </LazyPage>
+            }
+          />
+
+          <Route
+            path="/material-receipts"
+            element={
+              <LazyPage>
+                <MaterialReceiptsPage />
               </LazyPage>
             }
           />
