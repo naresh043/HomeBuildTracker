@@ -37,7 +37,7 @@ export interface Payment {
 
   verificationStatus: VerificationStatus;
 
-  createdBy: string;
+  createdBy: string | null;
   isDeleted: boolean;
 
   createdAt: string;
@@ -118,4 +118,5 @@ export interface PaymentQueryParams {
   method?: PaymentMethod;
   hasReceipt?: boolean;
   includeDeleted?: boolean;
+  verificationStatus?: VerificationStatus;
 }

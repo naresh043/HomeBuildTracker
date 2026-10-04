@@ -63,3 +63,14 @@ export const getPaymentReference = (payment: Payment): string => {
 
   return payment.paymentNo;
 };
+
+export const getUpiAppLabel = (value: NonNullable<Payment["upiApp"]>): string => {
+  const labels: Record<NonNullable<Payment["upiApp"]>, string> = {
+    PHONEPE: "PhonePe",
+    GOOGLE_PAY: "Google Pay",
+    PAYTM: "Paytm",
+    BHIM: "BHIM",
+    OTHER: "Other",
+  };
+  return labels[value];
+};
