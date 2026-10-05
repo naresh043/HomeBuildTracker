@@ -30,11 +30,6 @@ const primaryNavigation = [
     icon: Home,
   },
   {
-    label: "House",
-    path: "/house",
-    icon: Building2,
-  },
-  {
     label: "Payments",
     path: "/payments",
     icon: CreditCard,
@@ -44,9 +39,24 @@ const primaryNavigation = [
     path: "/materials",
     icon: Package,
   },
+  {
+    label: "Expenses",
+    path: "/expenses",
+    icon: ReceiptText,
+  },
 ];
 
 const secondaryNavigation = [
+  {
+    label: "Construction",
+    path: "/construction",
+    icon: BarChart3,
+  },
+  {
+    label: "House",
+    path: "/house",
+    icon: Building2,
+  },
   {
     label: "Material Receipts",
     path: "/material-receipts",
@@ -58,9 +68,9 @@ const secondaryNavigation = [
     icon: FileText,
   },
   {
-    label: "Expenses",
-    path: "/expenses",
-    icon: ReceiptText,
+    label: "Vendors",
+    path: "/vendors",
+    icon: UsersRound,
   },
   {
     label: "Contracts",
@@ -71,16 +81,6 @@ const secondaryNavigation = [
     label: "Supplier Agreements",
     path: "/supplier-agreements",
     icon: Handshake,
-  },
-  {
-    label: "Construction",
-    path: "/construction",
-    icon: BarChart3,
-  },
-  {
-    label: "Vendors",
-    path: "/vendors",
-    icon: UsersRound,
   },
   {
     label: "Settings",
@@ -451,13 +451,15 @@ export default function AppShell() {
                 aria-label="Mobile menu"
                 className="max-h-[calc(100vh-4rem-var(--mobile-nav-height))] space-y-1 overflow-y-auto p-4"
               >
-                {[...primaryNavigation, ...secondaryNavigation].map((item) => (
-                  <NavigationItem
-                    key={item.path}
-                    {...item}
-                    onNavigate={() => setMobileMenuOpen(false)}
-                  />
-                ))}
+                {[...primaryNavigation, ...secondaryNavigation].map(
+                  (item) => (
+                    <NavigationItem
+                      key={item.path}
+                      {...item}
+                      onNavigate={() => setMobileMenuOpen(false)}
+                    />
+                  ),
+                )}
 
                 <div aria-hidden="true" className="my-3 border-t" />
 
@@ -505,7 +507,11 @@ export default function AppShell() {
           >
             <div className="mx-auto flex h-[var(--mobile-nav-height)] max-w-lg items-stretch">
               {primaryNavigation.map((item) => (
-                <NavigationItem key={item.path} {...item} mobile />
+                <NavigationItem
+                  key={item.path}
+                  {...item}
+                  mobile
+                />
               ))}
 
               <button

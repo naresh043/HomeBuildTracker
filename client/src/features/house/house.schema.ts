@@ -1,27 +1,8 @@
+import { isValid, parse } from "date-fns";
 import { z } from "zod";
 
 export const houseInitializeSchema = z.object({
-  name: z.string().trim().min(1, "House name is required"),
-
-  status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]),
-
-  startDate: z.string().min(1, "Construction start date is required"),
-
-  budgetMinPaise: z
-    .number({
-      required_error: "Minimum budget is required",
-      invalid_type_error: "Minimum budget must be a number",
-    })
-    .nonnegative("Minimum budget cannot be negative")
-    .optional(),
-
-  budgetMaxPaise: z
-    .number({
-      required_error: "Maximum budget is required",
-      invalid_type_error: "Maximum budget must be a number",
-    })
-    .nonnegative("Maximum budget cannot be negative")
-    .optional(),
+  confirm: z.literal(true),
 });
 
 export const houseUpdateSchema = z.object({
@@ -34,19 +15,14 @@ export const houseUpdateSchema = z.object({
     .min(1, "Construction start date is required")
     .optional(),
 
-  budgetMin: z
-    .number({
-      invalid_type_error: "Minimum budget must be a number",
-    })
-    .nonnegative("Minimum budget cannot be negative")
-    .optional(),
+  budgetMin: z.number().nonnegative("Minimum budget cannot be negative").safe("Minimum budget is too large").optional(),
 
-  budgetMax: z
-    .number({
-      invalid_type_error: "Maximum budget must be a number",
-    })
-    .nonnegative("Maximum budget cannot be negative")
-    .optional(),
+  budgetMax: z.number().nonnegative("Maximum budget cannot be negative").safe("Maximum budget is too large").optional(),
+}).superRefine((data, ctx) => {
+  if (data.startDate !== undefined && !isValid(parse(data.startDate, "yyyy-MM-dd", new Date()))) ctx.addIssue({ code: "custom", path: ["startDate"], message: "Enter a valid start date" });
+  if (data.budgetMin !== undefined && data.budgetMax !== undefined && data.budgetMin > data.budgetMax) {
+    ctx.addIssue({ code: "custom", path: ["budgetMin"], message: "Minimum budget cannot exceed maximum budget" });
+  }
 });
 
 export const currentStageSchema = z.object({
