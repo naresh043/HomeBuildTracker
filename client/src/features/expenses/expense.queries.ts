@@ -12,10 +12,11 @@ export const expenseQueryKeys = {
     [...expenseQueryKeys.details(), expenseId, { includeDeleted }] as const,
 };
 
-export const useExpensesQuery = (params?: ExpenseQueryParams) =>
+export const useExpensesQuery = (params?: ExpenseQueryParams, enabled = true) =>
   useQuery({
     queryKey: expenseQueryKeys.list(params),
     queryFn: () => getExpenses(params),
+    enabled,
   });
 
 export const useExpenseQuery = (
