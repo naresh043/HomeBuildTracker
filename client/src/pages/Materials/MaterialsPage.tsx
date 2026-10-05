@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import axios from "axios";
 import { toast } from "sonner";
 
 import MaterialDeleteDialog from "@/components/materials/MaterialDeleteDialog";
@@ -26,6 +28,8 @@ export default function MaterialsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
+  const [page, setPage] = useState(1);
+  const getErrorMessage = (error: unknown, fallback: string) => axios.isAxiosError<{ message?: string }>(error) ? error.response?.data?.message ?? fallback : error instanceof Error ? error.message : fallback;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] =
@@ -35,8 +39,8 @@ export default function MaterialsPage() {
     useState<Material | null>(null);
 
   const materialsQuery = useMaterialsQuery({
-    page: 1,
-    limit: 100,
+    page,
+    limit: 20,
     q: search.trim() || undefined,
     category: category || undefined,
     includeDeleted: showDeleted,
@@ -47,14 +51,11 @@ export default function MaterialsPage() {
   const deleteMutation = useDeleteMaterialMutation();
   const restoreMutation = useRestoreMaterialMutation();
 
-  const materials = materialsQuery.data?.data.materials ?? [];
+  const materials = useMemo(() => materialsQuery.data?.data.materials ?? [], [materialsQuery.data?.data.materials]);
 
   const visibleMaterials = useMemo(
-    () =>
-      showDeleted
-        ? materials.filter((material) => material.isDeleted)
-        : materials.filter((material) => !material.isDeleted),
-    [materials, showDeleted],
+    () => materials,
+    [materials],
   );
 
   const categories = useMemo(
@@ -111,12 +112,8 @@ export default function MaterialsPage() {
 
       setFormOpen(false);
       setEditingMaterial(null);
-    } catch {
-      toast.error(
-        editingMaterial
-          ? "Failed to update material"
-          : "Failed to create material",
-      );
+    } catch (error) {
+      toast.error(getErrorMessage(error, editingMaterial ? "Failed to update material" : "Failed to create material"));
     }
   };
 
@@ -132,8 +129,8 @@ export default function MaterialsPage() {
 
       toast.success("Material deleted successfully");
       setDeletingMaterial(null);
-    } catch {
-      toast.error("Failed to delete material");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete material"));
     }
   };
 
@@ -142,15 +139,13 @@ export default function MaterialsPage() {
       await restoreMutation.mutateAsync(material._id);
 
       toast.success("Material restored successfully");
-    } catch {
-      toast.error("Failed to restore material");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to restore material"));
     }
   };
 
   const handleClearFilters = () => {
-    setSearch("");
-    setCategory("");
-    setShowDeleted(false);
+    setSearch(""); setCategory(""); setShowDeleted(false); setPage(1);
   };
 
   const handleRetry = () => {
@@ -167,9 +162,9 @@ export default function MaterialsPage() {
           category={category}
           categories={categories}
           showDeleted={showDeleted}
-          onSearchChange={setSearch}
-          onCategoryChange={setCategory}
-          onShowDeletedChange={setShowDeleted}
+          onSearchChange={(value) => { setSearch(value); setPage(1); }}
+          onCategoryChange={(value) => { setCategory(value); setPage(1); }}
+          onShowDeletedChange={(value) => { setShowDeleted(value); setPage(1); }}
           onClear={handleClearFilters}
         />
 
@@ -177,7 +172,7 @@ export default function MaterialsPage() {
 
         {materialsQuery.isError && !materialsQuery.isLoading && (
           <MaterialErrorState
-            message="Unable to load materials. Please check your connection and try again."
+            message={getErrorMessage(materialsQuery.error, "Unable to load materials. Please check your connection and try again.")}
             onRetry={handleRetry}
           />
         )}
@@ -202,12 +197,11 @@ export default function MaterialsPage() {
             />
           )}
 
-        {materialsQuery.isSuccess &&
-          materialsQuery.data.data.pagination.total > 100 && (
-            <p className="text-center text-sm text-muted-foreground">
-              Showing the first 100 materials.
-            </p>
-          )}
+        {materialsQuery.isSuccess && materialsQuery.data.data.pagination.totalPages > 1 && <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3">
+          <button type="button" aria-label="Previous materials page" disabled={!materialsQuery.data.data.pagination.hasPreviousPage} onClick={() => setPage((current) => Math.max(1, current - 1))} className="inline-flex min-h-10 items-center gap-1 rounded-xl border px-3 text-sm disabled:opacity-40"><ChevronLeft className="h-4 w-4"/><span className="hidden sm:inline">Previous</span></button>
+          <span className="text-sm" aria-live="polite">Page {materialsQuery.data.data.pagination.page} of {materialsQuery.data.data.pagination.totalPages}</span>
+          <button type="button" aria-label="Next materials page" disabled={!materialsQuery.data.data.pagination.hasNextPage} onClick={() => setPage((current) => current + 1)} className="inline-flex min-h-10 items-center gap-1 rounded-xl border px-3 text-sm disabled:opacity-40"><span className="hidden sm:inline">Next</span><ChevronRight className="h-4 w-4"/></button>
+        </div>}
       </div>
 
       <MaterialFormDialog

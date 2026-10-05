@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 
-import { ReceiptText, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -31,6 +31,11 @@ const MaterialsPage = lazy(() => import("@/pages/Materials/MaterialsPage"));
 const MaterialReceiptsPage = lazy(
   () => import("@/pages/MaterialReceipts/MaterialReceiptsPage"),
 );
+const ReceiptsPage = lazy(() => import("@/pages/Receipts/ReceiptsPage"));
+const PaymentsPage = lazy(() => import("@/pages/Payments/PaymentsPage"));
+const ExpensesPage = lazy(() => import("@/pages/Expenses/ExpensesPage"));
+const ContractsPage = lazy(() => import("@/pages/Contracts/ContractsPage"));
+const SupplierAgreementsPage = lazy(() => import("@/pages/SupplierAgreements/SupplierAgreementsPage"));
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
@@ -91,7 +96,7 @@ export default function AppRoutes() {
             path="/payments"
             element={
               <LazyPage>
-                <h1>This is the payment page</h1>
+                <PaymentsPage />
               </LazyPage>
             }
           />
@@ -118,6 +123,15 @@ export default function AppRoutes() {
             }
           />
 
+          <Route
+            path="/receipts"
+            element={
+              <LazyPage>
+                <ReceiptsPage />
+              </LazyPage>
+            }
+          />
+
           {/* =================================================
               VENDORS
           ================================================= */}
@@ -139,11 +153,25 @@ export default function AppRoutes() {
             path="/expenses"
             element={
               <LazyPage>
-                <FeaturePlaceholderPage
-                  title="Expenses"
-                  description="Track additional construction expenses that are not represented by material receipts."
-                  icon={ReceiptText}
-                />
+                <ExpensesPage />
+              </LazyPage>
+            }
+          />
+
+          <Route
+            path="/contracts"
+            element={
+              <LazyPage>
+                <ContractsPage />
+              </LazyPage>
+            }
+          />
+
+          <Route
+            path="/supplier-agreements"
+            element={
+              <LazyPage>
+                <SupplierAgreementsPage />
               </LazyPage>
             }
           />

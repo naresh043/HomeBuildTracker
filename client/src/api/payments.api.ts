@@ -6,7 +6,6 @@ import type {
   PaymentResponse,
   PaymentQueryParams,
   UpdatePaymentRequest,
-  VerifyPaymentRequest,
 } from "@/features/payments/payment.types";
 
 export const createPayment = async (
@@ -57,11 +56,9 @@ export const updatePayment = async (
 
 export const verifyPayment = async (
   paymentId: string,
-  payload: VerifyPaymentRequest,
 ): Promise<PaymentResponse> => {
   const response = await apiClient.patch<PaymentResponse>(
     API_ENDPOINTS.payments.verify(paymentId),
-    payload,
   );
 
   return response.data;

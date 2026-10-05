@@ -1,0 +1,2 @@
+import { FileSearch } from "lucide-react";
+export default function ReceiptEmptyState({ deletedOnly }: { deletedOnly:boolean }){return <div className="rounded-2xl border border-dashed p-10 text-center"><FileSearch className="mx-auto h-9 w-9 text-muted-foreground"/><h2 className="mt-3 font-semibold">{deletedOnly?"No deleted receipts":"No receipts found"}</h2><p className="mt-1 text-sm text-muted-foreground">{deletedOnly?"Deleted receipts will appear here.":"Upload a supporting document or adjust your filters."}</p></div>}

@@ -16,8 +16,9 @@ export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   CASH: "Cash",
   UPI: "UPI",
-  BANK_TRANSFER: "Bank Transfer",
+  BANK: "Bank",
   CHEQUE: "Cheque",
+  OTHER: "Other",
 };
 
 export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
@@ -61,4 +62,15 @@ export const getPaymentReference = (payment: Payment): string => {
   }
 
   return payment.paymentNo;
+};
+
+export const getUpiAppLabel = (value: NonNullable<Payment["upiApp"]>): string => {
+  const labels: Record<NonNullable<Payment["upiApp"]>, string> = {
+    PHONEPE: "PhonePe",
+    GOOGLE_PAY: "Google Pay",
+    PAYTM: "Paytm",
+    BHIM: "BHIM",
+    OTHER: "Other",
+  };
+  return labels[value];
 };

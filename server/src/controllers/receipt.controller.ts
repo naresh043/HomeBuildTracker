@@ -1,5 +1,3 @@
-// src/controllers/receipt.controller.ts
-
 import { RequestHandler } from "express";
 
 import {
@@ -65,7 +63,11 @@ export const listReceiptsController: RequestHandler = async (
   }
 };
 
-export const getReceiptController: RequestHandler = async (req, res, next) => {
+export const getReceiptController: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const validated = (req as any).validated;
 
@@ -77,7 +79,11 @@ export const getReceiptController: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const linkReceiptController: RequestHandler = async (req, res, next) => {
+export const linkReceiptController: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const validated = (req as any).validated;
 
@@ -88,7 +94,9 @@ export const linkReceiptController: RequestHandler = async (req, res, next) => {
       expenseId: validated.body.expenseId,
     });
 
-    return res.json(successResponse(receipt, "Receipt linked successfully"));
+    return res.json(
+      successResponse(receipt, "Receipt linked successfully"),
+    );
   } catch (error) {
     return next(error);
   }
@@ -109,7 +117,9 @@ export const unlinkReceiptController: RequestHandler = async (
       expenseId: validated.body.expenseId,
     });
 
-    return res.json(successResponse(receipt, "Receipt unlinked successfully"));
+    return res.json(
+      successResponse(receipt, "Receipt unlinked successfully"),
+    );
   } catch (error) {
     return next(error);
   }
@@ -123,9 +133,11 @@ export const deleteReceiptController: RequestHandler = async (
   try {
     const validated = (req as any).validated;
 
-    await deleteReceipt(validated.params.receiptId);
+    const receipt = await deleteReceipt(validated.params.receiptId);
 
-    return res.json(successResponse(null, "Receipt deleted successfully"));
+    return res.json(
+      successResponse(receipt, "Receipt deleted successfully"),
+    );
   } catch (error) {
     return next(error);
   }
@@ -139,9 +151,11 @@ export const restoreReceiptController: RequestHandler = async (
   try {
     const validated = (req as any).validated;
 
-    await restoreReceipt(validated.params.receiptId);
+    const receipt = await restoreReceipt(validated.params.receiptId);
 
-    return res.json(successResponse(null, "Receipt restored successfully"));
+    return res.json(
+      successResponse(receipt, "Receipt restored successfully"),
+    );
   } catch (error) {
     return next(error);
   }

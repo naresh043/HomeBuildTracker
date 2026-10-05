@@ -11,7 +11,6 @@ import {
 import type {
   CreatePaymentRequest,
   UpdatePaymentRequest,
-  VerifyPaymentRequest,
 } from "./payment.types";
 
 import { paymentQueryKeys } from "./payment.queries";
@@ -58,13 +57,7 @@ export const useVerifyPaymentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      paymentId,
-      payload,
-    }: {
-      paymentId: string;
-      payload: VerifyPaymentRequest;
-    }) => verifyPayment(paymentId, payload),
+    mutationFn: (paymentId: string) => verifyPayment(paymentId),
 
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
@@ -72,7 +65,7 @@ export const useVerifyPaymentMutation = () => {
       });
 
       void queryClient.invalidateQueries({
-        queryKey: paymentQueryKeys.detail(variables.paymentId),
+        queryKey: paymentQueryKeys.detail(variables),
       });
     },
   });

@@ -26,6 +26,8 @@ export interface House {
   floors: HouseFloor[];
   budgetMin: number;
   budgetMax: number;
+  currentStageId?: string | null;
+  workingBudget?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,13 +38,7 @@ export interface HouseResponse {
   data: House;
 }
 
-export interface InitializeHouseRequest {
-  name: string;
-  status: HouseStatus;
-  startDate: string;
-  budgetMinPaise?: number;
-  budgetMaxPaise?: number;
-}
+export type InitializeHouseRequest = Record<string, never>;
 
 export interface UpdateHouseRequest {
   name?: string;
@@ -53,5 +49,5 @@ export interface UpdateHouseRequest {
 }
 
 export interface UpdateCurrentStageRequest {
-  stageId: string;
+  stageId: string | null;
 }

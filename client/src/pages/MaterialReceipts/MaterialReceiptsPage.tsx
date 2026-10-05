@@ -115,7 +115,7 @@ export default function MaterialReceiptsPage() {
 
     return items.filter((receipt) => receipt.isDeleted);
   }, [receiptsQuery.data?.data.items, includeDeleted]);
-  
+
   const vendors = (vendorsQuery.data?.data ?? []).filter(
     (vendor) => !vendor.isDeleted && vendor.status === "ACTIVE",
   );

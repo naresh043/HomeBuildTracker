@@ -2,11 +2,14 @@ import {
   BarChart3,
   Building2,
   CreditCard,
+  FileSignature,
+  Handshake,
   Home,
   LogOut,
   Menu,
   Package,
   ReceiptText,
+  FileText,
   Truck,
   Settings,
   UsersRound,
@@ -27,11 +30,6 @@ const primaryNavigation = [
     icon: Home,
   },
   {
-    label: "House",
-    path: "/house",
-    icon: Building2,
-  },
-  {
     label: "Payments",
     path: "/payments",
     icon: CreditCard,
@@ -41,28 +39,48 @@ const primaryNavigation = [
     path: "/materials",
     icon: Package,
   },
-];
-
-const secondaryNavigation = [
-  {
-    label: "Material Receipts",
-    path: "/material-receipts",
-    icon: Truck,
-  },
   {
     label: "Expenses",
     path: "/expenses",
     icon: ReceiptText,
   },
+];
+
+const secondaryNavigation = [
   {
     label: "Construction",
     path: "/construction",
     icon: BarChart3,
   },
   {
+    label: "House",
+    path: "/house",
+    icon: Building2,
+  },
+  {
+    label: "Material Receipts",
+    path: "/material-receipts",
+    icon: Truck,
+  },
+  {
+    label: "Receipts",
+    path: "/receipts",
+    icon: FileText,
+  },
+  {
     label: "Vendors",
     path: "/vendors",
     icon: UsersRound,
+  },
+  {
+    label: "Contracts",
+    path: "/contracts",
+    icon: FileSignature,
+  },
+  {
+    label: "Supplier Agreements",
+    path: "/supplier-agreements",
+    icon: Handshake,
   },
   {
     label: "Settings",
@@ -262,10 +280,31 @@ function getPageContext(pathname: string) {
     };
   }
 
+  if (pathname.startsWith("/receipts")) {
+    return {
+      title: "Receipts",
+      subtitle: "Manage supporting documents",
+    };
+  }
+
   if (pathname.startsWith("/expenses")) {
     return {
       title: "Expenses",
       subtitle: "Track construction expenses",
+    };
+  }
+
+  if (pathname.startsWith("/contracts")) {
+    return {
+      title: "Contracts",
+      subtitle: "Manage contractor terms and payments",
+    };
+  }
+
+  if (pathname.startsWith("/supplier-agreements")) {
+    return {
+      title: "Supplier Agreements",
+      subtitle: "Manage material supplier commitments",
     };
   }
 
@@ -412,13 +451,15 @@ export default function AppShell() {
                 aria-label="Mobile menu"
                 className="max-h-[calc(100vh-4rem-var(--mobile-nav-height))] space-y-1 overflow-y-auto p-4"
               >
-                {[...primaryNavigation, ...secondaryNavigation].map((item) => (
-                  <NavigationItem
-                    key={item.path}
-                    {...item}
-                    onNavigate={() => setMobileMenuOpen(false)}
-                  />
-                ))}
+                {[...primaryNavigation, ...secondaryNavigation].map(
+                  (item) => (
+                    <NavigationItem
+                      key={item.path}
+                      {...item}
+                      onNavigate={() => setMobileMenuOpen(false)}
+                    />
+                  ),
+                )}
 
                 <div aria-hidden="true" className="my-3 border-t" />
 
@@ -466,7 +507,11 @@ export default function AppShell() {
           >
             <div className="mx-auto flex h-[var(--mobile-nav-height)] max-w-lg items-stretch">
               {primaryNavigation.map((item) => (
-                <NavigationItem key={item.path} {...item} mobile />
+                <NavigationItem
+                  key={item.path}
+                  {...item}
+                  mobile
+                />
               ))}
 
               <button

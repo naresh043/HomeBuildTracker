@@ -89,4 +89,7 @@ export interface VendorListParams {
   page?: number;
   limit?: number;
   includeDeleted?: boolean;
+  q?: string;
+  type?: VendorType;
+  status?: VendorStatus;
 }
