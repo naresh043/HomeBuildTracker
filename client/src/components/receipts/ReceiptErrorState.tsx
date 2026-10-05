@@ -1,0 +1,2 @@
+import { Button } from "@/components/ui/button";
+export default function ReceiptErrorState({ message, onRetry }: { message:string; onRetry:()=>void }){return <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center"><h2 className="font-semibold">Could not load receipts</h2><p className="mt-1 break-words text-sm text-muted-foreground">{message}</p><Button className="mt-4" onClick={onRetry}>Try again</Button></div>}

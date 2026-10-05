@@ -1,5 +1,3 @@
-// src/validators/receipt.schema.ts
-
 import { z } from "zod";
 import { RECEIPT_SOURCE_TYPE } from "../constants/receipt";
 
@@ -21,6 +19,25 @@ const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+const transactionLinkSchema = z
+  .object({
+    paymentId: objectIdSchema.optional(),
+    materialReceiptId: objectIdSchema.optional(),
+    expenseId: objectIdSchema.optional(),
+  })
+  .refine(
+    (data) =>
+      [
+        data.paymentId,
+        data.materialReceiptId,
+        data.expenseId,
+      ].filter(Boolean).length === 1,
+    {
+      message:
+        "Exactly one transaction ID is required: paymentId, materialReceiptId, or expenseId",
+    },
+  );
+
 export const createReceiptSchema = z.object({
   body: z.object({
     sourceType: sourceTypeSchema,
@@ -37,11 +54,15 @@ export const listReceiptsSchema = z.object({
   params: emptyObjectSchema,
 
   query: paginationSchema.extend({
+    q: z
+      .string()
+      .trim()
+      .max(100, "Search query cannot exceed 100 characters")
+      .optional(),
+
     sourceType: sourceTypeSchema.optional(),
 
-    fileType: z
-      .enum(["IMAGE", "PDF"])
-      .optional(),
+    fileType: z.enum(["IMAGE", "PDF"]).optional(),
 
     fromDate: z.coerce.date().optional(),
 
@@ -82,23 +103,7 @@ export const restoreReceiptSchema = z.object({
 });
 
 export const linkReceiptSchema = z.object({
-  body: z
-    .object({
-      paymentId: objectIdSchema.optional(),
-      materialReceiptId: objectIdSchema.optional(),
-      expenseId: objectIdSchema.optional(),
-    })
-    .refine(
-      (data) =>
-        Boolean(
-          data.paymentId ||
-            data.materialReceiptId ||
-            data.expenseId,
-        ),
-      {
-        message: "At least one transaction ID is required",
-      },
-    ),
+  body: transactionLinkSchema,
 
   params: z.object({
     receiptId: objectIdSchema,
@@ -108,27 +113,11 @@ export const linkReceiptSchema = z.object({
 });
 
 export const unlinkReceiptSchema = z.object({
-  body: z
-    .object({
-      paymentId: objectIdSchema.optional(),
-      materialReceiptId: objectIdSchema.optional(),
-      expenseId: objectIdSchema.optional(),
-    })
-    .refine(
-      (data) =>
-        Boolean(
-          data.paymentId ||
-            data.materialReceiptId ||
-            data.expenseId,
-        ),
-      {
-        message: "At least one transaction ID is required",
-      },
-    ),
+  body: transactionLinkSchema,
 
   params: z.object({
     receiptId: objectIdSchema,
   }),
 
   query: emptyObjectSchema,
-}); 
+});

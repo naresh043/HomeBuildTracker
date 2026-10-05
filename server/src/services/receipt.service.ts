@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import cloudinary from "../config/cloudinary";
 
+import cloudinary from "../config/cloudinary";
 import { Receipt } from "../models/Receipt";
 import {
   RECEIPT_FILE_TYPE,
@@ -22,6 +22,7 @@ interface UploadReceiptInput {
 }
 
 interface ListReceiptsInput {
+  q?: string;
   page: number;
   limit: number;
   sourceType?: ReceiptSourceType;
@@ -37,6 +38,24 @@ interface LinkReceiptInput {
   materialReceiptId?: string;
   expenseId?: string;
 }
+
+type ReceiptLinkedTransaction =
+  | {
+      type: "payment";
+      id: string;
+      label: string;
+    }
+  | {
+      type: "materialReceipt";
+      id: string;
+      label: string;
+    }
+  | {
+      type: "expense";
+      id: string;
+      label: string;
+    }
+  | null;
 
 const getFileType = (mimeType: string) => {
   if (mimeType === "application/pdf") {
@@ -54,7 +73,11 @@ const getFileType = (mimeType: string) => {
   );
 };
 
-const validateFile = (buffer: Buffer, mimeType: string, sizeBytes: number) => {
+const validateFile = (
+  buffer: Buffer,
+  mimeType: string,
+  sizeBytes: number,
+) => {
   if (!buffer || buffer.length === 0) {
     throw new ApiError(422, "Receipt file is empty", "EMPTY_FILE");
   }
@@ -141,6 +164,206 @@ const deleteFromCloudinary = async (
   }
 };
 
+/**
+ * Escapes user input before it is used as a MongoDB regular expression.
+ *
+ * This prevents characters such as ".", "*", "+", "(", ")" etc.
+ * from being interpreted as regular-expression operators.
+ */
+const escapeRegex = (value: string) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+/**
+ * Determines which transaction a receipt is linked to.
+ *
+ * Application rule:
+ * one receipt -> zero or one transaction
+ *
+ * Existing legacy data is handled defensively by checking all three
+ * transaction collections. New links are prevented from creating
+ * multiple relationships by linkReceipt().
+ */
+const findLinkedTransaction = async (
+  receiptId: Types.ObjectId,
+): Promise<ReceiptLinkedTransaction> => {
+  const [payment, materialReceipt, expense] = await Promise.all([
+    Payment.findOne({
+      receiptId,
+      isDeleted: false,
+    })
+      .select("_id paymentNo")
+      .lean(),
+
+    MaterialReceipt.findOne({
+      receiptId,
+      isDeleted: false,
+    })
+      .select("_id receiptNo")
+      .lean(),
+
+    Expense.findOne({
+      receiptId,
+      isDeleted: false,
+    })
+      .select("_id category")
+      .lean(),
+  ]);
+
+  if (payment) {
+    return {
+      type: "payment",
+      id: payment._id.toString(),
+      label: payment.paymentNo,
+    };
+  }
+
+  if (materialReceipt) {
+    return {
+      type: "materialReceipt",
+      id: materialReceipt._id.toString(),
+      label: materialReceipt.receiptNo,
+    };
+  }
+
+  if (expense) {
+    return {
+      type: "expense",
+      id: expense._id.toString(),
+      label: expense.category,
+    };
+  }
+
+  return null;
+};
+
+/**
+ * Adds linkedTransaction to a single receipt.
+ */
+const serializeReceipt = async (receipt: any) => {
+  const linkedTransaction = await findLinkedTransaction(receipt._id);
+
+  return {
+    ...receipt.toObject(),
+    linkedTransaction,
+  };
+};
+
+/**
+ * Adds linkedTransaction to a receipt list using batched queries.
+ *
+ * This avoids running 3 database queries for every receipt.
+ */
+const serializeReceiptList = async (receipts: any[]) => {
+  if (receipts.length === 0) {
+    return [];
+  }
+
+  const receiptIds = receipts.map((receipt) => receipt._id);
+
+  const [payments, materialReceipts, expenses] = await Promise.all([
+    Payment.find({
+      receiptId: { $in: receiptIds },
+      isDeleted: false,
+    })
+      .select("_id paymentNo receiptId")
+      .lean(),
+
+    MaterialReceipt.find({
+      receiptId: { $in: receiptIds },
+      isDeleted: false,
+    })
+      .select("_id receiptNo receiptId")
+      .lean(),
+
+    Expense.find({
+      receiptId: { $in: receiptIds },
+      isDeleted: false,
+    })
+      .select("_id category receiptId")
+      .lean(),
+  ]);
+
+  const linkedTransactions = new Map<
+    string,
+    ReceiptLinkedTransaction
+  >();
+
+  for (const payment of payments) {
+    if (!payment.receiptId) {
+      continue;
+    }
+
+    const receiptId = payment.receiptId.toString();
+
+    if (!linkedTransactions.has(receiptId)) {
+      linkedTransactions.set(receiptId, {
+        type: "payment",
+        id: payment._id.toString(),
+        label: payment.paymentNo,
+      });
+    }
+  }
+
+  for (const materialReceipt of materialReceipts) {
+    if (!materialReceipt.receiptId) {
+      continue;
+    }
+
+    const receiptId = materialReceipt.receiptId.toString();
+
+    if (!linkedTransactions.has(receiptId)) {
+      linkedTransactions.set(receiptId, {
+        type: "materialReceipt",
+        id: materialReceipt._id.toString(),
+        label: materialReceipt.receiptNo,
+      });
+    }
+  }
+
+  for (const expense of expenses) {
+    if (!expense.receiptId) {
+      continue;
+    }
+
+    const receiptId = expense.receiptId.toString();
+
+    if (!linkedTransactions.has(receiptId)) {
+      linkedTransactions.set(receiptId, {
+        type: "expense",
+        id: expense._id.toString(),
+        label: expense.category,
+      });
+    }
+  }
+
+  return receipts.map((receipt) => ({
+    ...receipt.toObject(),
+    linkedTransaction:
+      linkedTransactions.get(receipt._id.toString()) ?? null,
+  }));
+};
+
+const getTransactionTargetCount = (input: LinkReceiptInput) => {
+  return [
+    input.paymentId,
+    input.materialReceiptId,
+    input.expenseId,
+  ].filter(Boolean).length;
+};
+
+const validateExactlyOneTransaction = (input: LinkReceiptInput) => {
+  const targetCount = getTransactionTargetCount(input);
+
+  if (targetCount !== 1) {
+    throw new ApiError(
+      422,
+      "Exactly one transaction ID is required",
+      "EXACTLY_ONE_TRANSACTION_REQUIRED",
+    );
+  }
+};
+
 export const createReceipt = async (input: UploadReceiptInput) => {
   validateFile(input.buffer, input.mimeType, input.sizeBytes);
 
@@ -174,7 +397,10 @@ export const createReceipt = async (input: UploadReceiptInput) => {
       isDeleted: false,
     });
 
-    return receipt;
+    return {
+      ...receipt.toObject(),
+      linkedTransaction: null,
+    };
   } catch (error) {
     await deleteFromCloudinary(uploadedFile.publicId, fileType);
 
@@ -184,6 +410,7 @@ export const createReceipt = async (input: UploadReceiptInput) => {
 
 export const listReceipts = async (input: ListReceiptsInput) => {
   const {
+    q,
     page,
     limit,
     sourceType,
@@ -207,6 +434,26 @@ export const listReceipts = async (input: ListReceiptsInput) => {
     filter.fileType = fileType;
   }
 
+  /*
+   * Search receipt files by their original uploaded filename.
+   *
+   * Example:
+   * q = "Naresh"
+   * matches:
+   * "Naresh Resume (2).pdf"
+   *
+   * The search is case-insensitive and the user input is escaped
+   * before being used as a regular expression.
+   */
+  const normalizedQuery = q?.trim();
+
+  if (normalizedQuery) {
+    filter.originalFileName = {
+      $regex: escapeRegex(normalizedQuery),
+      $options: "i",
+    };
+  }
+
   if (fromDate || toDate) {
     const createdAt: Record<string, Date> = {};
 
@@ -226,13 +473,18 @@ export const listReceipts = async (input: ListReceiptsInput) => {
   const skip = (page - 1) * limit;
 
   const [items, total] = await Promise.all([
-    Receipt.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Receipt.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
 
     Receipt.countDocuments(filter),
   ]);
 
+  const serializedItems = await serializeReceiptList(items);
+
   return {
-    items,
+    items: serializedItems,
     pagination: {
       page,
       limit,
@@ -244,7 +496,11 @@ export const listReceipts = async (input: ListReceiptsInput) => {
 
 export const getReceiptById = async (receiptId: string) => {
   if (!Types.ObjectId.isValid(receiptId)) {
-    throw new ApiError(400, "Invalid receipt ID", "INVALID_RECEIPT_ID");
+    throw new ApiError(
+      400,
+      "Invalid receipt ID",
+      "INVALID_RECEIPT_ID",
+    );
   }
 
   const receipt = await Receipt.findOne({
@@ -253,31 +509,72 @@ export const getReceiptById = async (receiptId: string) => {
   });
 
   if (!receipt) {
-    throw new ApiError(404, "Receipt not found", "RECEIPT_NOT_FOUND");
+    throw new ApiError(
+      404,
+      "Receipt not found",
+      "RECEIPT_NOT_FOUND",
+    );
   }
 
-  return receipt;
+  return serializeReceipt(receipt);
 };
 
 export const linkReceipt = async (input: LinkReceiptInput) => {
-  const receipt = await getReceiptById(input.receiptId);
+  validateExactlyOneTransaction(input);
 
-  if (!input.paymentId && !input.materialReceiptId && !input.expenseId) {
+  /*
+   * We need the actual Receipt document here because we only need
+   * its _id to assign to the target transaction.
+   */
+  if (!Types.ObjectId.isValid(input.receiptId)) {
     throw new ApiError(
-      422,
-      "At least one transaction ID is required",
-      "TRANSACTION_ID_REQUIRED",
+      400,
+      "Invalid receipt ID",
+      "INVALID_RECEIPT_ID",
+    );
+  }
+
+  const receipt = await Receipt.findOne({
+    _id: input.receiptId,
+    isDeleted: false,
+  });
+
+  if (!receipt) {
+    throw new ApiError(
+      404,
+      "Receipt not found",
+      "RECEIPT_NOT_FOUND",
     );
   }
 
   if (input.paymentId) {
+    if (!Types.ObjectId.isValid(input.paymentId)) {
+      throw new ApiError(
+        400,
+        "Invalid payment ID",
+        "INVALID_PAYMENT_ID",
+      );
+    }
+
     const payment = await Payment.findOne({
       _id: input.paymentId,
       isDeleted: false,
     });
 
     if (!payment) {
-      throw new ApiError(404, "Payment not found", "PAYMENT_NOT_FOUND");
+      throw new ApiError(
+        404,
+        "Payment not found",
+        "PAYMENT_NOT_FOUND",
+      );
+    }
+
+    if (payment.receiptId) {
+      throw new ApiError(
+        409,
+        "Payment is already linked to a receipt",
+        "TRANSACTION_ALREADY_LINKED",
+      );
     }
 
     payment.receiptId = receipt._id;
@@ -285,6 +582,14 @@ export const linkReceipt = async (input: LinkReceiptInput) => {
   }
 
   if (input.materialReceiptId) {
+    if (!Types.ObjectId.isValid(input.materialReceiptId)) {
+      throw new ApiError(
+        400,
+        "Invalid material receipt ID",
+        "INVALID_MATERIAL_RECEIPT_ID",
+      );
+    }
+
     const materialReceipt = await MaterialReceipt.findOne({
       _id: input.materialReceiptId,
       isDeleted: false,
@@ -298,39 +603,88 @@ export const linkReceipt = async (input: LinkReceiptInput) => {
       );
     }
 
+    if (materialReceipt.receiptId) {
+      throw new ApiError(
+        409,
+        "Material receipt is already linked to a receipt",
+        "TRANSACTION_ALREADY_LINKED",
+      );
+    }
+
     materialReceipt.receiptId = receipt._id;
     await materialReceipt.save();
   }
 
   if (input.expenseId) {
+    if (!Types.ObjectId.isValid(input.expenseId)) {
+      throw new ApiError(
+        400,
+        "Invalid expense ID",
+        "INVALID_EXPENSE_ID",
+      );
+    }
+
     const expense = await Expense.findOne({
       _id: input.expenseId,
       isDeleted: false,
     });
 
     if (!expense) {
-      throw new ApiError(404, "Expense not found", "EXPENSE_NOT_FOUND");
+      throw new ApiError(
+        404,
+        "Expense not found",
+        "EXPENSE_NOT_FOUND",
+      );
+    }
+
+    if (expense.receiptId) {
+      throw new ApiError(
+        409,
+        "Expense is already linked to a receipt",
+        "TRANSACTION_ALREADY_LINKED",
+      );
     }
 
     expense.receiptId = receipt._id;
     await expense.save();
   }
 
-  return receipt;
+  return serializeReceipt(receipt);
 };
 
 export const unlinkReceipt = async (input: LinkReceiptInput) => {
-  const receipt = await getReceiptById(input.receiptId);
+  validateExactlyOneTransaction(input);
 
-  if (!input.paymentId && !input.materialReceiptId && !input.expenseId) {
+  if (!Types.ObjectId.isValid(input.receiptId)) {
     throw new ApiError(
-      422,
-      "At least one transaction ID is required",
-      "TRANSACTION_ID_REQUIRED",
+      400,
+      "Invalid receipt ID",
+      "INVALID_RECEIPT_ID",
+    );
+  }
+
+  const receipt = await Receipt.findOne({
+    _id: input.receiptId,
+    isDeleted: false,
+  });
+
+  if (!receipt) {
+    throw new ApiError(
+      404,
+      "Receipt not found",
+      "RECEIPT_NOT_FOUND",
     );
   }
 
   if (input.paymentId) {
+    if (!Types.ObjectId.isValid(input.paymentId)) {
+      throw new ApiError(
+        400,
+        "Invalid payment ID",
+        "INVALID_PAYMENT_ID",
+      );
+    }
+
     const payment = await Payment.findOne({
       _id: input.paymentId,
       receiptId: receipt._id,
@@ -350,6 +704,14 @@ export const unlinkReceipt = async (input: LinkReceiptInput) => {
   }
 
   if (input.materialReceiptId) {
+    if (!Types.ObjectId.isValid(input.materialReceiptId)) {
+      throw new ApiError(
+        400,
+        "Invalid material receipt ID",
+        "INVALID_MATERIAL_RECEIPT_ID",
+      );
+    }
+
     const materialReceipt = await MaterialReceipt.findOne({
       _id: input.materialReceiptId,
       receiptId: receipt._id,
@@ -369,6 +731,14 @@ export const unlinkReceipt = async (input: LinkReceiptInput) => {
   }
 
   if (input.expenseId) {
+    if (!Types.ObjectId.isValid(input.expenseId)) {
+      throw new ApiError(
+        400,
+        "Invalid expense ID",
+        "INVALID_EXPENSE_ID",
+      );
+    }
+
     const expense = await Expense.findOne({
       _id: input.expenseId,
       receiptId: receipt._id,
@@ -387,21 +757,25 @@ export const unlinkReceipt = async (input: LinkReceiptInput) => {
     await expense.save();
   }
 
-  return receipt;
+  return serializeReceipt(receipt);
 };
 
 export const deleteReceipt = async (receiptId: string) => {
-  const receipt = await getReceiptById(receiptId);
+  const receipt = await getReceiptDocumentById(receiptId);
 
   receipt.isDeleted = true;
   await receipt.save();
 
-  return receipt;
+  return serializeReceipt(receipt);
 };
 
 export const restoreReceipt = async (receiptId: string) => {
   if (!Types.ObjectId.isValid(receiptId)) {
-    throw new ApiError(400, "Invalid receipt ID", "INVALID_RECEIPT_ID");
+    throw new ApiError(
+      400,
+      "Invalid receipt ID",
+      "INVALID_RECEIPT_ID",
+    );
   }
 
   const receipt = await Receipt.findOne({
@@ -410,11 +784,44 @@ export const restoreReceipt = async (receiptId: string) => {
   });
 
   if (!receipt) {
-    throw new ApiError(404, "Deleted receipt not found", "RECEIPT_NOT_FOUND");
+    throw new ApiError(
+      404,
+      "Deleted receipt not found",
+      "RECEIPT_NOT_FOUND",
+    );
   }
 
   receipt.isDeleted = false;
   await receipt.save();
+
+  return serializeReceipt(receipt);
+};
+
+/**
+ * Internal helper used by deleteReceipt because getReceiptById()
+ * intentionally only returns active receipts.
+ */
+const getReceiptDocumentById = async (receiptId: string) => {
+  if (!Types.ObjectId.isValid(receiptId)) {
+    throw new ApiError(
+      400,
+      "Invalid receipt ID",
+      "INVALID_RECEIPT_ID",
+    );
+  }
+
+  const receipt = await Receipt.findOne({
+    _id: receiptId,
+    isDeleted: false,
+  });
+
+  if (!receipt) {
+    throw new ApiError(
+      404,
+      "Receipt not found",
+      "RECEIPT_NOT_FOUND",
+    );
+  }
 
   return receipt;
 };
