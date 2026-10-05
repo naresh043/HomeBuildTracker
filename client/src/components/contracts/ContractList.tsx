@@ -1,0 +1,4 @@
+import ContractCard from "./ContractCard";
+import type { Contract } from "@/features/contracts/contract.types";
+interface Props { contracts: Contract[]; vendorNames: Map<string, string>; restoringId?: string; onDetails: (contract: Contract) => void; onEdit: (contract: Contract) => void; onDelete: (contract: Contract) => void; onRestore: (contract: Contract) => void }
+export default function ContractList({ contracts, vendorNames, restoringId, ...actions }: Props) { if (!contracts.length) return null; return <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{contracts.map((contract) => <ContractCard key={contract.id} contract={contract} vendorName={vendorNames.get(contract.vendorId) ?? "Vendor no longer active"} isRestoring={restoringId === contract.id} {...actions} />)}</div>; }
