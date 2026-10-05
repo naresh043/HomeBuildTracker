@@ -62,7 +62,6 @@ export const API_ENDPOINTS = {
 
   contracts: {
     base: "/contracts",
-
     byId: (contractId: string) => `/contracts/${contractId}`,
     summary: (contractId: string) => `/contracts/${contractId}/summary`,
     restore: (contractId: string) => `/contracts/${contractId}/restore`,

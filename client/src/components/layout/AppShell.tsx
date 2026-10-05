@@ -2,6 +2,7 @@ import {
   BarChart3,
   Building2,
   CreditCard,
+  FileSignature,
   Home,
   LogOut,
   Menu,
@@ -53,6 +54,11 @@ const secondaryNavigation = [
     label: "Expenses",
     path: "/expenses",
     icon: ReceiptText,
+  },
+  {
+    label: "Contracts",
+    path: "/contracts",
+    icon: FileSignature,
   },
   {
     label: "Construction",
@@ -266,6 +272,13 @@ function getPageContext(pathname: string) {
     return {
       title: "Expenses",
       subtitle: "Track construction expenses",
+    };
+  }
+
+  if (pathname.startsWith("/contracts")) {
+    return {
+      title: "Contracts",
+      subtitle: "Manage contractor terms and payments",
     };
   }
 
