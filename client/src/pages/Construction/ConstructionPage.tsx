@@ -18,7 +18,9 @@ import {
   useReorderStagesMutation,
   useRestoreStageMutation,
   useUpdateStageMutation,
+  useInitializeStagesMutation,
 } from "@/features/stages/stage.mutations";
+import axios from "axios";
 
 import { useStagesQuery } from "@/features/stages/stage.queries";
 
@@ -50,6 +52,7 @@ export default function ConstructionPage() {
     useStagesQuery(showDeleted);
 
   const createStageMutation = useCreateStageMutation();
+  const initializeMutation = useInitializeStagesMutation();
   const updateStageMutation = useUpdateStageMutation();
   const reorderStagesMutation = useReorderStagesMutation();
   const deleteStageMutation = useDeleteStageMutation();
@@ -114,6 +117,17 @@ export default function ConstructionPage() {
 
   const isDeleting = deleteStageMutation.isPending;
   const isReordering = reorderStagesMutation.isPending;
+  const isInitializing = initializeMutation.isPending;
+  const getErrorMessage = (error: unknown, fallback: string) => axios.isAxiosError<{ message?: string }>(error) ? error.response?.data?.message ?? fallback : error instanceof Error ? error.message : fallback;
+
+  const handleInitialize = async () => {
+    try {
+      const response = await initializeMutation.mutateAsync();
+      toast.success(response.message || "Default construction stages initialized.");
+    } catch (mutationError) {
+      toast.error(getErrorMessage(mutationError, "Failed to initialize construction stages."));
+    }
+  };
 
   const handleOpenCreate = () => {
     setEditingStageId(null);
@@ -163,8 +177,9 @@ export default function ConstructionPage() {
       toast.success("Construction stage order updated successfully.");
 
       setIsReorderOpen(false);
-    } catch {
-      toast.error("Failed to update construction stage order.");
+    } catch (mutationError) {
+      await refetch();
+      toast.error(getErrorMessage(mutationError, "Failed to update construction stage order."));
     }
   };
 
@@ -182,7 +197,7 @@ export default function ConstructionPage() {
         name: createValues.name.trim(),
         description: createValues.description?.trim() || undefined,
         status: createValues.status,
-        order: createValues.order,
+        order: activeStages.length + 1,
         startDate: createValues.startDate?.trim() || undefined,
         completionDate:
           createValues.completionDate?.trim() || undefined,
@@ -193,8 +208,8 @@ export default function ConstructionPage() {
 
       setIsFormOpen(false);
       setEditingStageId(null);
-    } catch {
-      toast.error("Failed to create construction stage.");
+    } catch (mutationError) {
+      toast.error(getErrorMessage(mutationError, "Failed to create construction stage."));
     }
   };
 
@@ -223,8 +238,8 @@ export default function ConstructionPage() {
 
       setIsFormOpen(false);
       setEditingStageId(null);
-    } catch {
-      toast.error("Failed to update construction stage.");
+    } catch (mutationError) {
+      toast.error(getErrorMessage(mutationError, "Failed to update construction stage."));
     }
   };
 
@@ -262,8 +277,8 @@ export default function ConstructionPage() {
       toast.success("Construction stage deleted successfully.");
 
       setDeleteStageId(null);
-    } catch {
-      toast.error("Failed to delete construction stage.");
+    } catch (mutationError) {
+      toast.error(getErrorMessage(mutationError, "Failed to delete construction stage."));
     }
   };
 
@@ -274,8 +289,8 @@ export default function ConstructionPage() {
       await restoreStageMutation.mutateAsync(stage._id);
 
       toast.success("Construction stage restored successfully.");
-    } catch {
-      toast.error("Failed to restore construction stage.");
+    } catch (mutationError) {
+      toast.error(getErrorMessage(mutationError, "Failed to restore construction stage."));
     }
   };
 
@@ -288,7 +303,7 @@ export default function ConstructionPage() {
   const hasFilters =
     search.trim().length > 0 || status !== "ALL" || showDeleted;
 
-  const hasStages = allStages.length > 0;
+  const hasStages = showDeleted ? allStages.length > 0 : activeStages.length > 0;
   const hasFilteredStages = filteredStages.length > 0;
 
   const pageErrorMessage =
@@ -340,8 +355,9 @@ export default function ConstructionPage() {
             <StageEmptyState
               title="No construction stages"
               description="Create your first construction stage to start tracking the house construction."
-              actionLabel="Add Stage"
-              onAction={handleOpenCreate}
+              actionLabel={activeStages.length ? "Add Stage" : isInitializing ? "Initializing…" : "Initialize default stages"}
+              onAction={activeStages.length ? handleOpenCreate : () => void handleInitialize()}
+              actionDisabled={isInitializing}
             />
           ) : !hasFilteredStages ? (
             <StageEmptyState
@@ -362,9 +378,7 @@ export default function ConstructionPage() {
               deletingStageId={
                 deleteStageMutation.isPending ? deleteStageId : null
               }
-              restoringStageId={
-                restoreStageMutation.isPending ? null : null
-              }
+              restoringStageId={restoreStageMutation.isPending ? restoreStageMutation.variables : null}
               onEditStage={handleOpenEdit}
               onDeleteStage={handleRequestDelete}
               onRestoreStage={handleRestoreStage}

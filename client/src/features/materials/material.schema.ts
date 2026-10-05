@@ -13,14 +13,14 @@ export const createMaterialSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, "Material name is required")
-    .max(100, "Material name must not exceed 100 characters"),
+    .min(2, "Material name must be at least 2 characters")
+    .max(150, "Material name cannot exceed 150 characters"),
 
   category: z
     .string()
     .trim()
     .min(1, "Category is required")
-    .max(100, "Category must not exceed 100 characters"),
+    .max(100, "Category cannot exceed 100 characters"),
 
   defaultUnit: materialUnitSchema,
 });
@@ -29,15 +29,15 @@ export const updateMaterialSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, "Material name is required")
-    .max(100, "Material name must not exceed 100 characters")
+    .min(2, "Material name must be at least 2 characters")
+    .max(150, "Material name cannot exceed 150 characters")
     .optional(),
 
   category: z
     .string()
     .trim()
     .min(1, "Category is required")
-    .max(100, "Category must not exceed 100 characters")
+    .max(100, "Category cannot exceed 100 characters")
     .optional(),
 
   defaultUnit: materialUnitSchema.optional(),

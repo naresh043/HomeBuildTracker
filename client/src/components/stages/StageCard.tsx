@@ -22,22 +22,22 @@ interface StageCardProps {
 const getStatusIcon = (status: ConstructionStage["status"]) => {
   switch (status) {
     case "IN_PROGRESS":
-      return Clock3;
+      return <Clock3 className="h-3.5 w-3.5" />;
 
     case "COMPLETED":
-      return CheckCircle2;
+      return <CheckCircle2 className="h-3.5 w-3.5" />;
 
     case "ON_HOLD":
-      return PauseCircle;
+      return <PauseCircle className="h-3.5 w-3.5" />;
 
     case "NOT_STARTED":
     default:
-      return Circle;
+      return <Circle className="h-3.5 w-3.5" />;
   }
 };
 
 export default function StageCard({ stage, onClick }: StageCardProps) {
-  const StatusIcon = getStatusIcon(stage.status);
+  const statusIcon = getStatusIcon(stage.status);
 
   const isClickable = Boolean(onClick);
 
@@ -116,7 +116,7 @@ export default function StageCard({ stage, onClick }: StageCardProps) {
                 getConstructionStageStatusClassName(stage.status),
               ].join(" ")}
             >
-              <StatusIcon className="h-3.5 w-3.5" />
+              {statusIcon}
               {formatConstructionStageStatus(stage.status)}
             </span>
 

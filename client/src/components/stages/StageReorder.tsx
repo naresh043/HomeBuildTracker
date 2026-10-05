@@ -1,5 +1,5 @@
 import { GripVertical, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { ConstructionStage } from "@/features/stages/stage.types";
 import { sortConstructionStages } from "@/features/stages/stage.utils";
@@ -17,13 +17,9 @@ export default function StageReorder({
   onSave,
   onClose,
 }: StageReorderProps) {
-  const [orderedStages, setOrderedStages] = useState<ConstructionStage[]>([]);
+  const [orderedStages, setOrderedStages] = useState<ConstructionStage[]>(() => sortConstructionStages(stages));
 
   const [draggedStageId, setDraggedStageId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setOrderedStages(sortConstructionStages(stages));
-  }, [stages]);
 
   const handleDragStart = (stageId: string) => {
     if (isSaving) {
@@ -109,11 +105,13 @@ export default function StageReorder({
   };
 
   const handleSave = async () => {
-    if (isSaving || orderedStages.length === 0) {
+    const stageIds = orderedStages.map((stage) => stage._id);
+    const expectedIds = new Set(stages.filter((stage) => !stage.isDeleted).map((stage) => stage._id));
+    if (isSaving || stageIds.length === 0 || new Set(stageIds).size !== stageIds.length || stageIds.length !== expectedIds.size || stageIds.some((id) => !expectedIds.has(id))) {
       return;
     }
 
-    await onSave(orderedStages.map((stage) => stage._id));
+    await onSave(stageIds);
   };
 
   return (

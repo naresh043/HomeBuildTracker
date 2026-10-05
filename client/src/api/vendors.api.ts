@@ -38,6 +38,9 @@ export const getVendors = async (
         ...(params?.includeDeleted !== undefined && {
           includeDeleted: params.includeDeleted,
         }),
+        ...(params?.q?.trim() && { q: params.q.trim() }),
+        ...(params?.type && { type: params.type }),
+        ...(params?.status && { status: params.status }),
       },
     },
   );

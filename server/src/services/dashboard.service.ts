@@ -7,7 +7,7 @@ import { MaterialReceipt } from "../models/MaterialReceipt";
 import { Contract } from "../models/Contract";
 import { Expense } from "../models/Expense";
 import { User } from "../models/User";
-import { PAYMENT_TYPE } from "../constants/payment";
+import { PAYMENT_TYPE, PAYMENT_VERIFICATION_STATUS } from "../constants/payment";
 import { CONSTRUCTION_STAGE_STATUS } from "../constants/construction";
 import { ApiError } from "../utils/ApiError";
 import type { DashboardQuery } from "../validators/dashboard.schema";
@@ -33,6 +33,113 @@ const formatMonth = (monthKey: string): string => {
     timeZone: "UTC",
   }).format(date);
 };
+type DashboardStageSummary = {
+  _id: Types.ObjectId;
+  name: string;
+  status: string;
+  order: number;
+  description?: string | null;
+  startDate?: Date | null;
+  completionDate?: Date | null;
+};
+
+type BudgetHealth =
+  | "NO_BUDGET"
+  | "BELOW_MINIMUM"
+  | "WITHIN_TARGET"
+  | "NEAR_MAXIMUM"
+  | "OVER_MAXIMUM";
+
+type FinancialHealth =
+  | "HEALTHY"
+  | "ATTENTION_REQUIRED"
+  | "CRITICAL";
+
+type DashboardActionType =
+  | "PAYMENT_VERIFICATION"
+  | "CONTRACTOR_OUTSTANDING"
+  | "SUPPLIER_AMOUNT_OWED"
+  | "UNUSED_SUPPLIER_ADVANCE";
+
+const toStageSummary = (
+  stage: DashboardStageSummary | null | undefined,
+) => {
+  if (!stage) {
+    return null;
+  }
+
+  return {
+    id: stage._id,
+    name: stage.name,
+    status: stage.status,
+    order: stage.order,
+    description: stage.description ?? null,
+    startDate: stage.startDate ?? null,
+    completionDate: stage.completionDate ?? null,
+  };
+};
+
+const getBudgetHealth = ({
+  budgetMinPaise,
+  budgetMaxPaise,
+  actualSpendingPaise,
+}: {
+  budgetMinPaise: number;
+  budgetMaxPaise: number;
+  actualSpendingPaise: number;
+}): BudgetHealth => {
+  if (budgetMinPaise <= 0 && budgetMaxPaise <= 0) {
+    return "NO_BUDGET";
+  }
+
+  if (budgetMaxPaise > 0 && actualSpendingPaise > budgetMaxPaise) {
+    return "OVER_MAXIMUM";
+  }
+
+  if (
+    budgetMaxPaise > 0 &&
+    actualSpendingPaise >= Math.round(budgetMaxPaise * 0.8)
+  ) {
+    return "NEAR_MAXIMUM";
+  }
+
+  if (
+    budgetMinPaise > 0 &&
+    actualSpendingPaise < budgetMinPaise
+  ) {
+    return "BELOW_MINIMUM";
+  }
+
+  return "WITHIN_TARGET";
+};
+
+const getFinancialHealth = ({
+  outstandingPaise,
+  budgetHealth,
+  needsVerification,
+}: {
+  outstandingPaise: number;
+  budgetHealth: BudgetHealth;
+  needsVerification: number;
+}): FinancialHealth => {
+  if (
+    budgetHealth === "OVER_MAXIMUM" ||
+    (outstandingPaise > 0 && needsVerification > 0)
+  ) {
+    return "CRITICAL";
+  }
+
+  if (
+    budgetHealth === "NEAR_MAXIMUM" ||
+    outstandingPaise > 0 ||
+    needsVerification > 0
+  ) {
+    return "ATTENTION_REQUIRED";
+  }
+
+  return "HEALTHY";
+};
+
 export const getDashboard = async (query: DashboardQuery) => {
   if (query.fromDate && query.toDate && query.fromDate > query.toDate) {
     throw new ApiError(
@@ -81,11 +188,21 @@ export const getDashboard = async (query: DashboardQuery) => {
     : (stages.find(
         (stage) => stage.status === CONSTRUCTION_STAGE_STATUS.IN_PROGRESS,
       ) ?? null);
+  const currentStageSummary = currentStage ? toStageSummary({
+    _id: currentStage._id,
+    name: currentStage.name,
+    status: currentStage.status,
+    order: currentStage.order,
+    description: currentStage.description ?? null,
+    startDate: currentStage.startDate ?? null,
+    completionDate: currentStage.completionDate ?? null,
+  }) : null;
   const [
     paymentTotals,
     materialTotals,
     expenseTotals,
     contractorPaymentTotals,
+    verificationAggregation,
   ] = await Promise.all([
     Payment.aggregate([
       {
@@ -151,6 +268,16 @@ export const getDashboard = async (query: DashboardQuery) => {
           totalContractorPaidPaise: {
             $sum: "$amountPaise",
           },
+        },
+      },
+    ]),
+    Payment.aggregate([
+      { $match: paymentFilter },
+      {
+        $group: {
+          _id: "$verificationStatus",
+          count: { $sum: 1 },
+          amountPaise: { $sum: "$amountPaise" },
         },
       },
     ]),
@@ -351,16 +478,44 @@ export const getDashboard = async (query: DashboardQuery) => {
   const outstandingPaise =
     totalContractorOutstandingPaise + supplierAmountOwedPaise;
   const totalStages = stages.length;
-  const completedStages = stages.filter(
-    (stage) => stage.status === CONSTRUCTION_STAGE_STATUS.COMPLETED,
-  ).length;
-  const inProgressStages = stages.filter(
-    (stage) => stage.status === CONSTRUCTION_STAGE_STATUS.IN_PROGRESS,
-  ).length;
+  const completedStages = stages.filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.COMPLETED).length;
+  const inProgressStages = stages.filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.IN_PROGRESS).length;
+  const notStartedStages = stages.filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.NOT_STARTED).length;
+  const onHoldStages = stages.filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.ON_HOLD).length;
   const stageProgress =
     totalStages === 0
       ? 0
       : Number(((completedStages / totalStages) * 100).toFixed(2));
+  const lastCompletedStage = stages
+    .filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.COMPLETED)
+    .reduce<(typeof stages)[number] | null>((latest, stage) => !latest || stage.order > latest.order ? stage : latest, null);
+  const nextStage = stages
+    .filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.NOT_STARTED)
+    .reduce<(typeof stages)[number] | null>((earliest, stage) => !earliest || stage.order < earliest.order ? stage : earliest, null);
+
+  const verifiedTotals = verificationAggregation.find((item) => item._id === PAYMENT_VERIFICATION_STATUS.VERIFIED);
+  const needsVerificationTotals = verificationAggregation
+    .filter((item) => item._id !== PAYMENT_VERIFICATION_STATUS.VERIFIED)
+    .reduce((total, item) => ({ count: total.count + (item.count ?? 0), amountPaise: total.amountPaise + (item.amountPaise ?? 0) }), { count: 0, amountPaise: 0 });
+  const verifiedPaymentCount = verifiedTotals?.count ?? 0;
+  const verifiedPaymentAmountPaise = verifiedTotals?.amountPaise ?? 0;
+  const needsVerificationPaymentCount = needsVerificationTotals.count;
+  const needsVerificationPaymentAmountPaise = needsVerificationTotals.amountPaise;
+  const budgetMinPaise = house.budgetMin ?? 0;
+  const budgetMaxPaise = house.budgetMax ?? 0;
+  const actualSpendingPaise = totalPaidPaise + totalOtherExpensesPaise;
+  const minimumExceeded = budgetMinPaise > 0 && actualSpendingPaise > budgetMinPaise;
+  const maximumExceeded = budgetMaxPaise > 0 && actualSpendingPaise > budgetMaxPaise;
+  const budgetHealth = getBudgetHealth({ budgetMinPaise, budgetMaxPaise, actualSpendingPaise });
+  const financialHealth = getFinancialHealth({ outstandingPaise, budgetHealth, needsVerification: needsVerificationPaymentCount });
+  const actionRequiredItems: { type: DashboardActionType; count: number; amount: number }[] = [];
+  if (needsVerificationPaymentCount > 0) actionRequiredItems.push({ type: "PAYMENT_VERIFICATION", count: needsVerificationPaymentCount, amount: toRupees(needsVerificationPaymentAmountPaise) });
+  const contractorOutstandingCount = contractorBalances.filter((item) => item.outstanding > 0).length;
+  if (totalContractorOutstandingPaise > 0) actionRequiredItems.push({ type: "CONTRACTOR_OUTSTANDING", count: contractorOutstandingCount, amount: toRupees(totalContractorOutstandingPaise) });
+  const supplierOwedCount = supplierBalances.filter((item) => item.balanceType === "AMOUNT_OWED").length;
+  if (totalSupplierAmountOwedPaise > 0) actionRequiredItems.push({ type: "SUPPLIER_AMOUNT_OWED", count: supplierOwedCount, amount: toRupees(totalSupplierAmountOwedPaise) });
+  const unusedAdvanceCount = supplierBalances.filter((item) => item.balanceType === "UNUSED_ADVANCE").length;
+  if (totalSupplierUnusedAdvancePaise > 0) actionRequiredItems.push({ type: "UNUSED_SUPPLIER_ADVANCE", count: unusedAdvanceCount, amount: toRupees(totalSupplierUnusedAdvancePaise) });
   const [monthlyPayments, monthlyExpenses] = await Promise.all([
     Payment.aggregate([
       {
@@ -608,9 +763,6 @@ export const getDashboard = async (query: DashboardQuery) => {
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10);
-  const budgetMinPaise = house.budgetMin ?? 0;
-  const budgetMaxPaise = house.budgetMax ?? 0;
-  const actualSpendingPaise = totalPaidPaise + totalOtherExpensesPaise;
   const remainingMinimumPaise = Math.max(
     budgetMinPaise - actualSpendingPaise,
     0,
@@ -633,17 +785,13 @@ export const getDashboard = async (query: DashboardQuery) => {
       name: house.name,
       status: house.status,
       startDate: house.startDate,
-      currentStage: currentStage
-        ? {
-            id: currentStage._id,
-            name: currentStage.name,
-            status: currentStage.status,
-            order: currentStage.order,
-            description: currentStage.description ?? null,
-            startDate: currentStage.startDate ?? null,
-            completionDate: currentStage.completionDate ?? null,
-          }
-        : null,
+      currentStage: currentStageSummary,
+    },
+    construction: {
+      currentStage: currentStageSummary,
+      lastCompletedStage: toStageSummary(lastCompletedStage ? { _id: lastCompletedStage._id, name: lastCompletedStage.name, status: lastCompletedStage.status, order: lastCompletedStage.order, description: lastCompletedStage.description ?? null, startDate: lastCompletedStage.startDate ?? null, completionDate: lastCompletedStage.completionDate ?? null } : null),
+      nextStage: toStageSummary(nextStage ? { _id: nextStage._id, name: nextStage.name, status: nextStage.status, order: nextStage.order, description: nextStage.description ?? null, startDate: nextStage.startDate ?? null, completionDate: nextStage.completionDate ?? null } : null),
+      totalStages, completedStages, inProgressStages, notStartedStages, onHoldStages, progress: stageProgress,
     },
     financial: {
       totalPaid: toRupees(totalPaidPaise),
@@ -657,6 +805,12 @@ export const getDashboard = async (query: DashboardQuery) => {
         suppliers: toRupees(supplierAmountOwedPaise),
       },
     },
+    financialHealth: {
+      totalSpent: toRupees(actualSpendingPaise),
+      totalPaid: toRupees(totalPaidPaise),
+      totalOutstanding: toRupees(outstandingPaise),
+      status: financialHealth,
+    },
     budget: {
       minimum: toRupees(budgetMinPaise),
       maximum: toRupees(budgetMaxPaise),
@@ -667,6 +821,22 @@ export const getDashboard = async (query: DashboardQuery) => {
         againstMinimum: budgetUtilizationAgainstMinimum,
         againstMaximum: budgetUtilizationAgainstMaximum,
       },
+      health: budgetHealth,
+      minimumExceeded,
+      minimumExceededAmount: minimumExceeded ? toRupees(actualSpendingPaise - budgetMinPaise) : 0,
+      maximumExceeded,
+      maximumExceededAmount: maximumExceeded ? toRupees(actualSpendingPaise - budgetMaxPaise) : 0,
+    },
+    verification: {
+      totalPayments: paymentCount,
+      verified: verifiedPaymentCount,
+      needsVerification: needsVerificationPaymentCount,
+      verifiedAmount: toRupees(verifiedPaymentAmountPaise),
+      needsVerificationAmount: toRupees(needsVerificationPaymentAmountPaise),
+    },
+    actionRequired: {
+      count: actionRequiredItems.reduce((total, item) => total + item.count, 0),
+      items: actionRequiredItems,
     },
     contractors: {
       totalContracts: contracts.length,
@@ -692,6 +862,8 @@ export const getDashboard = async (query: DashboardQuery) => {
       total: totalStages,
       completed: completedStages,
       inProgress: inProgressStages,
+      notStarted: notStartedStages,
+      onHold: onHoldStages,
       progress: stageProgress,
       items: stages.map((stage) => ({
         id: stage._id,

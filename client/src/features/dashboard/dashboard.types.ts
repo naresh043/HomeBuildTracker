@@ -11,6 +11,9 @@ export type StageStatus =
   | "ON_HOLD";
 
 export type BalanceType = "UNUSED_ADVANCE" | "AMOUNT_OWED";
+export type BudgetHealth = "NO_BUDGET" | "BELOW_MINIMUM" | "WITHIN_TARGET" | "NEAR_MAXIMUM" | "OVER_MAXIMUM";
+export type FinancialHealthStatus = "HEALTHY" | "ATTENTION_REQUIRED" | "CRITICAL";
+export type DashboardActionType = "PAYMENT_VERIFICATION" | "CONTRACTOR_OUTSTANDING" | "SUPPLIER_AMOUNT_OWED" | "UNUSED_SUPPLIER_ADVANCE";
 
 export type TransactionType = "PAYMENT" | "EXPENSE";
 
@@ -24,7 +27,7 @@ export interface DashboardStage {
   completionDate: string | null;
 }
 
-export interface CurrentStage extends DashboardStage {}
+export type CurrentStage = DashboardStage;
 
 export interface HouseSummary {
   id: string;
@@ -61,6 +64,44 @@ export interface BudgetSummary {
   remainingMinimum: number;
   remainingMaximum: number;
   utilization: BudgetUtilization;
+  health: BudgetHealth;
+  minimumExceeded: boolean;
+  minimumExceededAmount: number;
+  maximumExceeded: boolean;
+  maximumExceededAmount: number;
+}
+
+export interface ConstructionSummary {
+  currentStage: CurrentStage | null;
+  lastCompletedStage: DashboardStage | null;
+  nextStage: DashboardStage | null;
+  totalStages: number;
+  completedStages: number;
+  inProgressStages: number;
+  notStartedStages: number;
+  onHoldStages: number;
+  progress: number;
+}
+
+export interface FinancialHealthSummary {
+  totalSpent: number;
+  totalPaid: number;
+  totalOutstanding: number;
+  status: FinancialHealthStatus;
+}
+
+export interface VerificationSummary {
+  totalPayments: number;
+  verified: number;
+  needsVerification: number;
+  verifiedAmount: number;
+  needsVerificationAmount: number;
+}
+
+export interface ActionRequiredItem {
+  type: DashboardActionType;
+  count: number;
+  amount: number;
 }
 
 export interface ContractorBalance {
@@ -69,9 +110,9 @@ export interface ContractorBalance {
     id: string;
     name: string;
     type: string;
-    phone?: string;
-    email?: string;
-  };
+    phone: string | null;
+    email: string | null;
+  } | null;
   contractType: string;
   status: string;
   contractValue: number;
@@ -92,8 +133,8 @@ export interface SupplierBalance {
   vendor: {
     name: string;
     type: string;
-    phone?: string;
-    email?: string;
+    phone: string | null;
+    email: string | null;
   };
   paid: number;
   materialReceived: number;
@@ -137,11 +178,11 @@ export interface CategorySummary {
 }
 
 export interface FamilyPayment {
-  userId: string;
+  userId: string | null;
   user: {
     name: string;
     email: string;
-  };
+  } | null;
   amount: number;
   paymentCount: number;
 }
@@ -167,6 +208,10 @@ export interface DashboardData {
   house: HouseSummary;
   financial: FinancialSummary;
   budget: BudgetSummary;
+  construction: ConstructionSummary;
+  financialHealth: FinancialHealthSummary;
+  verification: VerificationSummary;
+  actionRequired: { count: number; items: ActionRequiredItem[] };
   contractors: ContractorSummary;
   suppliers: SupplierSummary;
   activity: ActivitySummary;
@@ -174,6 +219,8 @@ export interface DashboardData {
     total: number;
     completed: number;
     inProgress: number;
+    notStarted: number;
+    onHold: number;
     progress: number;
     items: DashboardStage[];
   };
