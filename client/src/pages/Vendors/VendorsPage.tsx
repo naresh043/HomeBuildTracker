@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import axios from "axios";
 import { toast } from "sonner";
 
 import VendorDeleteDialog from "@/components/vendors/VendorDeleteDialog";
@@ -28,10 +30,12 @@ import type {
 } from "@/features/vendors/vendor.types";
 
 const VendorsPage = () => {
+  const getErrorMessage = (error: unknown, fallback: string) => axios.isAxiosError<{ message?: string }>(error) ? error.response?.data?.message ?? fallback : error instanceof Error ? error.message : fallback;
   const [showDeleted, setShowDeleted] = useState(false);
   const [search, setSearch] = useState("");
   const [type, setType] = useState<VendorType | undefined>();
   const [status, setStatus] = useState<VendorStatus | undefined>();
+  const [page, setPage] = useState(1);
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
@@ -42,9 +46,12 @@ const VendorsPage = () => {
   const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
 
   const vendorsQuery = useVendorsQuery({
-    page: 1,
-    limit: 100,
+    page,
+    limit: 20,
     includeDeleted: showDeleted,
+    q: search.trim() || undefined,
+    type,
+    status,
   });
 
   const createVendorMutation = useCreateVendorMutation();
@@ -52,34 +59,9 @@ const VendorsPage = () => {
   const deleteVendorMutation = useDeleteVendorMutation();
   const restoreVendorMutation = useRestoreVendorMutation();
 
-  const vendors = vendorsQuery.data?.data.vendors ?? [];
+  const vendors = useMemo(() => vendorsQuery.data?.data.vendors ?? [], [vendorsQuery.data?.data.vendors]);
 
-  const visibleVendors = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return vendors.filter((vendor) => {
-      if (showDeleted && !vendor.isDeleted) {
-        return false;
-      }
-
-      if (
-        normalizedSearch &&
-        !vendor.name.toLowerCase().includes(normalizedSearch)
-      ) {
-        return false;
-      }
-
-      if (type && vendor.type !== type) {
-        return false;
-      }
-
-      if (status && vendor.status !== status) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [vendors, search, type, status, showDeleted]);
+  const visibleVendors = vendors;
 
   const openCreateForm = () => {
     setSelectedVendor(null);
@@ -118,10 +100,7 @@ const VendorsPage = () => {
       setIsFormOpen(false);
       setSelectedVendor(null);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to save vendor";
-
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Unable to save vendor"));
     }
   };
 
@@ -152,10 +131,7 @@ const VendorsPage = () => {
       setIsDeleteDialogOpen(false);
       setVendorToDelete(null);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to delete vendor";
-
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Unable to delete vendor"));
     }
   };
 
@@ -165,18 +141,12 @@ const VendorsPage = () => {
 
       toast.success("Vendor restored successfully");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to restore vendor";
-
-      toast.error(message);
+      toast.error(getErrorMessage(error, "Unable to restore vendor"));
     }
   };
 
   const clearFilters = () => {
-    setSearch("");
-    setType(undefined);
-    setStatus(undefined);
-    setShowDeleted(false);
+    setSearch(""); setType(undefined); setStatus(undefined); setShowDeleted(false); setPage(1);
   };
 
   const isFormSubmitting =
@@ -195,10 +165,10 @@ const VendorsPage = () => {
           type={type}
           status={status}
           showDeleted={showDeleted}
-          onSearchChange={setSearch}
-          onTypeChange={setType}
-          onStatusChange={setStatus}
-          onShowDeletedChange={setShowDeleted}
+          onSearchChange={(value) => { setSearch(value); setPage(1); }}
+          onTypeChange={(value) => { setType(value); setPage(1); }}
+          onStatusChange={(value) => { setStatus(value); setPage(1); }}
+          onShowDeletedChange={(value) => { setShowDeleted(value); setPage(1); }}
           onClear={clearFilters}
         />
 
@@ -206,7 +176,7 @@ const VendorsPage = () => {
 
         {vendorsQuery.isError && (
           <VendorErrorState
-            message="Unable to load vendors. Please try again."
+            message={getErrorMessage(vendorsQuery.error, "Unable to load vendors. Please try again.")}
             onRetry={() => {
               void vendorsQuery.refetch();
             }}
@@ -229,12 +199,11 @@ const VendorsPage = () => {
           />
         )}
 
-        {vendorsQuery.isSuccess &&
-          vendorsQuery.data?.data.pagination.hasNextPage && (
-            <p className="text-center text-xs text-gray-500">
-              Showing the first 100 vendors.
-            </p>
-          )}
+        {vendorsQuery.isSuccess && vendorsQuery.data.data.pagination.totalPages > 1 && <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card p-3">
+          <button type="button" aria-label="Previous vendors page" disabled={!vendorsQuery.data.data.pagination.hasPreviousPage} onClick={() => setPage((current) => Math.max(1, current - 1))} className="inline-flex min-h-10 items-center gap-1 rounded-xl border px-3 text-sm disabled:opacity-40"><ChevronLeft className="h-4 w-4"/><span className="hidden sm:inline">Previous</span></button>
+          <span className="text-sm" aria-live="polite">Page {vendorsQuery.data.data.pagination.page} of {vendorsQuery.data.data.pagination.totalPages}</span>
+          <button type="button" aria-label="Next vendors page" disabled={!vendorsQuery.data.data.pagination.hasNextPage} onClick={() => setPage((current) => current + 1)} className="inline-flex min-h-10 items-center gap-1 rounded-xl border px-3 text-sm disabled:opacity-40"><span className="hidden sm:inline">Next</span><ChevronRight className="h-4 w-4"/></button>
+        </div>}
       </div>
 
       <VendorFormDialog

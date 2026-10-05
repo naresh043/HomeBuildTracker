@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 
 import { useEffect } from "react";
 
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { DatePicker } from "@/components/ui/date-picker";
 
@@ -137,8 +137,8 @@ export default function StageForm({
    * ============================================================
    */
 
-  const createStatus = createForm.watch("status");
-  const updateStatus = updateForm.watch("status");
+  const createStatus = useWatch({ control: createForm.control, name: "status" });
+  const updateStatus = useWatch({ control: updateForm.control, name: "status" });
 
   const isCreateCompleted = createStatus === "COMPLETED";
   const isUpdateCompleted = updateStatus === "COMPLETED";
@@ -307,31 +307,7 @@ export default function StageForm({
                   )}
                 </div>
 
-                {/* ORDER */}
-
-                <div>
-                  <label htmlFor="stage-order" className={labelClassName}>
-                    Order
-                  </label>
-
-                  <input
-                    id="stage-order"
-                    type="number"
-                    min={1}
-                    step={1}
-                    disabled={isSubmitting}
-                    className={inputClassName}
-                    {...createForm.register("order", {
-                      valueAsNumber: true,
-                    })}
-                  />
-
-                  {createForm.formState.errors.order?.message && (
-                    <p className={errorClassName}>
-                      {createForm.formState.errors.order.message}
-                    </p>
-                  )}
-                </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">New stages are added after the active stages. You can change their order from the reorder control.</p>
               </div>
 
               {/* =================================================

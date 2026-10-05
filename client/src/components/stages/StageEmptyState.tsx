@@ -5,6 +5,7 @@ interface StageEmptyStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  actionDisabled?: boolean;
 }
 
 export default function StageEmptyState({
@@ -12,6 +13,7 @@ export default function StageEmptyState({
   description = "There are no construction stages to display yet.",
   actionLabel = "Add Stage",
   onAction,
+  actionDisabled = false,
 }: StageEmptyStateProps) {
   return (
     <section
@@ -35,7 +37,8 @@ export default function StageEmptyState({
         <button
           type="button"
           onClick={onAction}
-          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-foreground px-4 text-sm font-semibold text-background transition-opacity hover:opacity-90 active:opacity-80"
+          disabled={actionDisabled}
+          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-foreground px-4 text-sm font-semibold text-background transition-opacity hover:opacity-90 active:opacity-80 disabled:cursor-wait disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
           <span>{actionLabel}</span>
