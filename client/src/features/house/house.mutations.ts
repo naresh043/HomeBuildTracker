@@ -21,10 +21,8 @@ export const useInitializeHouseMutation = () => {
     mutationFn: (payload: InitializeHouseRequest) =>
       initializeHouse(payload),
 
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: houseQueryKeys.all,
-      });
+    onSuccess: (response) => {
+      queryClient.setQueryData(houseQueryKeys.detail(), response);
     },
   });
 };
@@ -36,10 +34,8 @@ export const useUpdateHouseMutation = () => {
     mutationFn: (payload: UpdateHouseRequest) =>
       updateHouse(payload),
 
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: houseQueryKeys.all,
-      });
+    onSuccess: (response) => {
+      queryClient.setQueryData(houseQueryKeys.detail(), response);
     },
   });
 };
@@ -51,10 +47,8 @@ export const useUpdateCurrentConstructionStageMutation = () => {
     mutationFn: (payload: UpdateCurrentStageRequest) =>
       updateCurrentConstructionStage(payload),
 
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: houseQueryKeys.all,
-      });
+    onSuccess: (response) => {
+      queryClient.setQueryData(houseQueryKeys.detail(), response);
     },
   });
 };
