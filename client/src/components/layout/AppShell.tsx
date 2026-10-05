@@ -3,6 +3,7 @@ import {
   Building2,
   CreditCard,
   FileSignature,
+  Handshake,
   Home,
   LogOut,
   Menu,
@@ -59,6 +60,11 @@ const secondaryNavigation = [
     label: "Contracts",
     path: "/contracts",
     icon: FileSignature,
+  },
+  {
+    label: "Supplier Agreements",
+    path: "/supplier-agreements",
+    icon: Handshake,
   },
   {
     label: "Construction",
@@ -279,6 +285,13 @@ function getPageContext(pathname: string) {
     return {
       title: "Contracts",
       subtitle: "Manage contractor terms and payments",
+    };
+  }
+
+  if (pathname.startsWith("/supplier-agreements")) {
+    return {
+      title: "Supplier Agreements",
+      subtitle: "Manage material supplier commitments",
     };
   }
 
