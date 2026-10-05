@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 
-import { ReceiptText, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -32,6 +32,7 @@ const MaterialReceiptsPage = lazy(
   () => import("@/pages/MaterialReceipts/MaterialReceiptsPage"),
 );
 const PaymentsPage = lazy(() => import("@/pages/Payments/PaymentsPage"));
+const ExpensesPage = lazy(() => import("@/pages/Expenses/ExpensesPage"));
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
@@ -140,11 +141,7 @@ export default function AppRoutes() {
             path="/expenses"
             element={
               <LazyPage>
-                <FeaturePlaceholderPage
-                  title="Expenses"
-                  description="Track additional construction expenses that are not represented by material receipts."
-                  icon={ReceiptText}
-                />
+                <ExpensesPage />
               </LazyPage>
             }
           />
