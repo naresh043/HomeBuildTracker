@@ -34,6 +34,7 @@ const MaterialReceiptsPage = lazy(
 const PaymentsPage = lazy(() => import("@/pages/Payments/PaymentsPage"));
 const ExpensesPage = lazy(() => import("@/pages/Expenses/ExpensesPage"));
 const ContractsPage = lazy(() => import("@/pages/Contracts/ContractsPage"));
+const SupplierAgreementsPage = lazy(() => import("@/pages/SupplierAgreements/SupplierAgreementsPage"));
 
 const FeaturePlaceholderPage = lazy(
   () => import("@/pages/common/FeaturePlaceholderPage"),
@@ -152,6 +153,15 @@ export default function AppRoutes() {
             element={
               <LazyPage>
                 <ContractsPage />
+              </LazyPage>
+            }
+          />
+
+          <Route
+            path="/supplier-agreements"
+            element={
+              <LazyPage>
+                <SupplierAgreementsPage />
               </LazyPage>
             }
           />
