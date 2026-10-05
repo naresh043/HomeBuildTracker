@@ -1,0 +1,1 @@
+export default function ReceiptLoadingState(){return <div role="status" aria-label="Loading receipts" className="grid gap-4 sm:grid-cols-2"><span className="sr-only">Loading receipts…</span>{[0,1,2,3].map(x=><div key={x} className="h-36 animate-pulse rounded-2xl border bg-muted/40"/>)}</div>}
