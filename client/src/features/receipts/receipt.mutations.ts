@@ -11,6 +11,7 @@ import {
 import { expenseQueryKeys } from "@/features/expenses/expense.queries";
 import { materialReceiptQueryKeys } from "@/features/material-receipts/material-receipt.queries";
 import { paymentQueryKeys } from "@/features/payments/payment.queries";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 import type {
   ReceiptLinkPayload,
@@ -112,6 +113,9 @@ export const useLinkReceiptMutation = () => {
       qc.invalidateQueries({
         queryKey: relatedKeys(variables.payload),
       });
+      if ("paymentId" in variables.payload || "materialReceiptId" in variables.payload) {
+        qc.invalidateQueries({ queryKey: dashboardQueryKeys.all });
+      }
 
       if (response.data) {
         qc.setQueryData(
@@ -143,6 +147,9 @@ export const useUnlinkReceiptMutation = () => {
       qc.invalidateQueries({
         queryKey: relatedKeys(variables.payload),
       });
+      if ("paymentId" in variables.payload || "materialReceiptId" in variables.payload) {
+        qc.invalidateQueries({ queryKey: dashboardQueryKeys.all });
+      }
 
       if (response.data) {
         qc.setQueryData(

@@ -8,6 +8,7 @@ import {
 } from "@/api/vendors.api";
 
 import { vendorQueryKeys } from "./vendor.queries";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 import type {
   CreateVendorRequest,
@@ -25,6 +26,7 @@ export const useCreateVendorMutation = () => {
       await queryClient.invalidateQueries({
         queryKey: vendorQueryKeys.all,
       });
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -52,6 +54,7 @@ export const useUpdateVendorMutation = () => {
           ),
         }),
       ]);
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -72,6 +75,7 @@ export const useDeleteVendorMutation = () => {
           queryKey: vendorQueryKeys.detail(vendorId),
         }),
       ]);
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -92,6 +96,7 @@ export const useRestoreVendorMutation = () => {
           queryKey: vendorQueryKeys.detail(vendorId),
         }),
       ]);
+      await queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };

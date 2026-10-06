@@ -9,9 +9,13 @@ import {
 } from "@/api/material-receipts.api";
 import { materialReceiptQueryKeys } from "./material-receipt.queries";
 import type { CreateMaterialReceiptRequest, UpdateMaterialReceiptRequest } from "./material-receipt.types";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 const invalidateReceiptQueries = (queryClient: ReturnType<typeof useQueryClient>) =>
-  queryClient.invalidateQueries({ queryKey: materialReceiptQueryKeys.all });
+  Promise.all([
+    queryClient.invalidateQueries({ queryKey: materialReceiptQueryKeys.all }),
+    queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all }),
+  ]);
 
 export const useCreateMaterialReceiptMutation = () => {
   const queryClient = useQueryClient();

@@ -14,14 +14,17 @@ import {
   Settings,
   UsersRound,
   X,
+  UserRound,
 } from "lucide-react";
 
 import { useState } from "react";
+import { useAppSelector } from "@/store/hooks";
 
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { logout } from "@/features/auth/authSlice";
 import { useAppDispatch } from "@/store/hooks";
+import { selectAuthUser } from "@/features/auth/auth.selectors";
 
 const primaryNavigation = [
   {
@@ -172,7 +175,7 @@ function NavigationItem({
   );
 }
 
-function Sidebar({ onLogout }: { onLogout: () => void }) {
+function Sidebar({ onLogout, userName, userEmail }: { onLogout: () => void; userName?: string; userEmail?: string }) {
   return (
     <aside className="hidden h-screen w-64 shrink-0 overflow-hidden border-r bg-background lg:flex lg:flex-col">
       {/* =====================================================
@@ -227,18 +230,25 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
           Always stays at the bottom of the sidebar.
       ===================================================== */}
 
-      <div className="shrink-0 border-t p-4">
+      <div className="shrink-0 border-t px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3 rounded-xl px-2 py-1.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <UserRound aria-hidden="true" className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-foreground">{userName || "Signed in"}</span>
+            {userEmail && <span className="block truncate text-xs text-muted-foreground">{userEmail}</span>}
+          </span>
         <button
           type="button"
           onClick={onLogout}
-          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+          aria-label="Log out of your account"
+          title="Log out"
+          className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors duration-150 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:bg-background">
-            <LogOut className="h-[17px] w-[17px]" />
-          </span>
-
-          <span>Logout</span>
+          <LogOut aria-hidden="true" className="h-[17px] w-[17px]" />
         </button>
+        </div>
       </div>
     </aside>
   );
@@ -339,17 +349,19 @@ export default function AppShell() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useAppSelector(selectAuthUser);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const pageContext = getPageContext(location.pathname);
 
   const handleLogout = async () => {
-    await dispatch(logout());
-
-    navigate("/login", {
-      replace: true,
-    });
+    setMobileMenuOpen(false);
+    try {
+      await dispatch(logout()).unwrap();
+    } finally {
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
@@ -359,7 +371,7 @@ export default function AppShell() {
             DESKTOP SIDEBAR
         =================================================== */}
 
-        <Sidebar onLogout={handleLogout} />
+        <Sidebar onLogout={() => void handleLogout()} userName={user?.name} userEmail={user?.email} />
 
         {/* ===================================================
             RIGHT APPLICATION AREA
@@ -463,19 +475,26 @@ export default function AppShell() {
 
                 <div aria-hidden="true" className="my-3 border-t" />
 
+                <div className="flex min-w-0 items-center gap-3 rounded-xl bg-muted/50 px-3 py-3" aria-label="Current account">
+                  <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted-foreground"><UserRound className="h-4 w-4" /></span>
+                  <span className="min-w-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Account</span>
+                    <span className="block truncate text-sm font-medium">{user?.name || "Signed in"}</span>
+                    {user?.email && <span className="block truncate text-xs text-muted-foreground">{user.email}</span>}
+                  </span>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    void handleLogout();
-                  }}
-                  className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Log out of your account"
+                  onClick={() => void handleLogout()}
+                  className="group mt-2 flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg group-hover:bg-background">
                     <LogOut className="h-[17px] w-[17px]" />
                   </span>
 
-                  <span>Logout</span>
+                  <span>Log out</span>
                 </button>
               </nav>
             </div>

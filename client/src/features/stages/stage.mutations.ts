@@ -10,6 +10,7 @@ import {
 } from "@/api/stages.api";
 
 import { stageQueryKeys } from "./stage.queries";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 import type {
   CreateStageRequest,
@@ -27,6 +28,7 @@ export const useInitializeStagesMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: stageQueryKeys.all,
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -41,6 +43,7 @@ export const useCreateStageMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: stageQueryKeys.all,
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -65,6 +68,7 @@ export const useUpdateStageMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: stageQueryKeys.detail(variables.stageId),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -79,6 +83,7 @@ export const useReorderStagesMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: stageQueryKeys.all,
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -97,6 +102,7 @@ export const useDeleteStageMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: stageQueryKeys.detail(stageId),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -115,6 +121,7 @@ export const useRestoreStageMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: stageQueryKeys.detail(stageId),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };

@@ -2,10 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createSupplierAgreement, deleteSupplierAgreement, restoreSupplierAgreement, updateSupplierAgreement } from "@/api/supplier-agreements.api";
 import { supplierAgreementQueryKeys } from "./supplier-agreement.queries";
 import type { CreateSupplierAgreementPayload, UpdateSupplierAgreementPayload } from "./supplier-agreement.types";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 export function useCreateSupplierAgreementMutation() {
   const client = useQueryClient();
-  return useMutation({ mutationFn: (payload: CreateSupplierAgreementPayload) => createSupplierAgreement(payload), onSuccess: () => client.invalidateQueries({ queryKey: supplierAgreementQueryKeys.lists() }) });
+  return useMutation({ mutationFn: (payload: CreateSupplierAgreementPayload) => createSupplierAgreement(payload), onSuccess: () => Promise.all([client.invalidateQueries({ queryKey: supplierAgreementQueryKeys.lists() }), client.invalidateQueries({ queryKey: dashboardQueryKeys.all })]) });
 }
 
 function invalidateAgreement(client: ReturnType<typeof useQueryClient>, id: string) {
@@ -13,6 +14,7 @@ function invalidateAgreement(client: ReturnType<typeof useQueryClient>, id: stri
     client.invalidateQueries({ queryKey: supplierAgreementQueryKeys.lists() }),
     client.invalidateQueries({ queryKey: [...supplierAgreementQueryKeys.details(), id] }),
     client.invalidateQueries({ queryKey: supplierAgreementQueryKeys.summary(id) }),
+    client.invalidateQueries({ queryKey: dashboardQueryKeys.all }),
   ]);
 }
 
