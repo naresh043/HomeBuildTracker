@@ -14,6 +14,7 @@ import type {
 } from "./payment.types";
 
 import { paymentQueryKeys } from "./payment.queries";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 export const useCreatePaymentMutation = () => {
   const queryClient = useQueryClient();
@@ -25,6 +26,7 @@ export const useCreatePaymentMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: paymentQueryKeys.all,
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -49,6 +51,7 @@ export const useUpdatePaymentMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: paymentQueryKeys.detail(variables.paymentId),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -67,6 +70,7 @@ export const useVerifyPaymentMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: paymentQueryKeys.detail(variables),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -85,6 +89,7 @@ export const useDeletePaymentMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: paymentQueryKeys.detail(paymentId),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -103,6 +108,7 @@ export const useRestorePaymentMutation = () => {
       void queryClient.invalidateQueries({
         queryKey: paymentQueryKeys.detail(paymentId),
       });
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };

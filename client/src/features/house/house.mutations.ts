@@ -13,6 +13,7 @@ import type {
 } from "./house.types";
 
 import { houseQueryKeys } from "./house.queries";
+import { dashboardQueryKeys } from "@/features/dashboard/dashboard.queries";
 
 export const useInitializeHouseMutation = () => {
   const queryClient = useQueryClient();
@@ -23,6 +24,7 @@ export const useInitializeHouseMutation = () => {
 
     onSuccess: (response) => {
       queryClient.setQueryData(houseQueryKeys.detail(), response);
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -36,6 +38,7 @@ export const useUpdateHouseMutation = () => {
 
     onSuccess: (response) => {
       queryClient.setQueryData(houseQueryKeys.detail(), response);
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };
@@ -49,6 +52,7 @@ export const useUpdateCurrentConstructionStageMutation = () => {
 
     onSuccess: (response) => {
       queryClient.setQueryData(houseQueryKeys.detail(), response);
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all });
     },
   });
 };

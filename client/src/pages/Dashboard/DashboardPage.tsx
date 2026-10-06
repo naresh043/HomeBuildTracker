@@ -13,7 +13,6 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -31,7 +30,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { getDashboardApi } from "@/api/dashboard.api";
+import { useDashboardQuery } from "@/features/dashboard/dashboard.queries";
 import { DatePicker } from "@/components/ui/date-picker";
 import type {
   ActionRequiredItem,
@@ -538,10 +537,7 @@ function financialHealthMessage(status: FinancialHealthStatus): string {
 export default function DashboardPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const dashboardQuery = useQuery({
-    queryKey: ["dashboard", { fromDate: fromDate || undefined, toDate: toDate || undefined }],
-    queryFn: () => getDashboardApi({ fromDate: fromDate || undefined, toDate: toDate || undefined }),
-  });
+  const dashboardQuery = useDashboardQuery({ fromDate: fromDate || undefined, toDate: toDate || undefined });
 
   if (dashboardQuery.isLoading) {
     return (
