@@ -9,6 +9,9 @@ import {
 import { useEffect, useState } from "react";
 
 import type { Receipt } from "@/features/receipts/receipt.types";
+import { getReceiptPreview } from "@/api/receipts.api";
+import { API_ENDPOINTS } from "@/api/endpoints";
+import { getApiUrl } from "@/api/client";
 import {
   formatReceiptCreatedDate,
   formatReceiptSize,
@@ -60,16 +63,7 @@ export default function ReceiptDetailsDialog({
       setPdfUrl(null);
 
       try {
-        const response = await fetch(receipt.fileUrl, {
-          method: "GET",
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Unable to load PDF (${response.status})`);
-        }
-
-        const blob = await response.blob();
+        const blob = await getReceiptPreview(receipt._id);
 
         if (blob.size === 0) {
           throw new Error("The PDF file is empty.");
@@ -132,12 +126,18 @@ export default function ReceiptDetailsDialog({
       return;
     }
 
-    if (isPdf && pdfUrl) {
-      window.open(
-        pdfUrl,
-        "_blank",
-        "noopener,noreferrer",
-      );
+    if (isPdf) {
+      const newWindow = window.open("about:blank", "_blank");
+      if (newWindow) {
+        newWindow.opener = null;
+        if (pdfUrl) {
+          newWindow.location.href = pdfUrl;
+        } else {
+          newWindow.location.href = getApiUrl(
+            API_ENDPOINTS.receipts.preview(receipt._id),
+          );
+        }
+      }
     }
   };
 
@@ -238,12 +238,9 @@ export default function ReceiptDetailsDialog({
               </h3>
 
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                {pdfError}
+                Unable to preview this PDF. You can still open it in your browser.
               </p>
 
-              <p className="mt-3 text-xs text-muted-foreground">
-                Check your connection and try opening the receipt again.
-              </p>
             </div>
           )}
         </div>
@@ -336,7 +333,7 @@ export default function ReceiptDetailsDialog({
         {/* Open file */}
         <button
           type="button"
-          disabled={isPdf && (!pdfUrl || isPdfLoading)}
+          disabled={isPdf && isPdfLoading}
           onClick={handleOpenFile}
           className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -348,7 +345,9 @@ export default function ReceiptDetailsDialog({
           {isPdf
             ? isPdfLoading
               ? "Preparing PDF…"
-              : "Open PDF in new tab"
+              : pdfError
+                ? "Open PDF"
+                : "Open PDF in new tab"
             : "Open receipt file"}
         </button>
       </section>

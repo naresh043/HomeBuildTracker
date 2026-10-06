@@ -8,4 +8,7 @@ const apiClient = axios.create({
   },
 });
 
+export const getApiUrl = (path: string) =>
+  new URL(path, apiClient.defaults.baseURL).toString();
+
 export default apiClient;

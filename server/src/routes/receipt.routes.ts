@@ -10,6 +10,7 @@ import {
   createReceiptController,
   deleteReceiptController,
   getReceiptController,
+  getReceiptPdfPreviewController,
   linkReceiptController,
   listReceiptsController,
   restoreReceiptController,
@@ -52,6 +53,8 @@ router.post(
  * GET /api/receipts
  */
 router.get("/", validate(listReceiptsSchema), listReceiptsController);
+
+router.get("/:receiptId/preview", validate(getReceiptSchema), getReceiptPdfPreviewController);
 
 /**
  * Get receipt
