@@ -41,9 +41,13 @@ export const getReceipt = async (id: string): Promise<ReceiptResponse> => {
   );
   return response.data;
 };
-export const getReceiptPreview = async (id: string): Promise<Blob> => {
+export const getReceiptPreview = async (
+  id: string,
+  signal?: AbortSignal,
+): Promise<Blob> => {
   const response = await apiClient.get<Blob>(API_ENDPOINTS.receipts.preview(id), {
     responseType: "blob",
+    signal,
   });
   return response.data;
 };
