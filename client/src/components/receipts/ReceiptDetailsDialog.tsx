@@ -1,4 +1,5 @@
 import {
+  Download,
   ExternalLink,
   FileText,
   Link2,
@@ -6,9 +7,11 @@ import {
   Unlink,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import type { Receipt } from "@/features/receipts/receipt.types";
+import { getReceiptPreview } from "@/api/receipts.api";
 import {
   formatReceiptCreatedDate,
   formatReceiptSize,
@@ -35,20 +38,45 @@ const getLinkedTransactionLabel = (
   }
 };
 
+const deferObjectUrlRevoke = (url: string) => {
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+};
+
+const getPdfDownloadName = (originalFileName: string) => {
+  const safeName = originalFileName
+    .replace(/[\\/]/g, "_")
+    .trim();
+  const filename = safeName || "receipt.pdf";
+  return /\.pdf$/i.test(filename) ? filename : `${filename}.pdf`;
+};
+
 export default function ReceiptDetailsDialog({
   receipt,
   onClose,
 }: Props) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isPdfDownloading, setIsPdfDownloading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [isMobileLayout, setIsMobileLayout] = useState(
+    () => window.matchMedia("(max-width: 639px)").matches,
+  );
+  const openedPdfUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateMobileLayout = () => setIsMobileLayout(mediaQuery.matches);
+    updateMobileLayout();
+    mediaQuery.addEventListener("change", updateMobileLayout);
+    return () => mediaQuery.removeEventListener("change", updateMobileLayout);
+  }, []);
 
   useEffect(() => {
     let objectUrl: string | null = null;
     const controller = new AbortController();
 
     const loadPdf = async () => {
-      if (!receipt || receipt.fileType !== "PDF") {
+      if (!receipt || receipt.fileType !== "PDF" || isMobileLayout) {
         setPdfUrl(null);
         setIsPdfLoading(false);
         setPdfError(null);
@@ -60,16 +88,7 @@ export default function ReceiptDetailsDialog({
       setPdfUrl(null);
 
       try {
-        const response = await fetch(receipt.fileUrl, {
-          method: "GET",
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Unable to load PDF (${response.status})`);
-        }
-
-        const blob = await response.blob();
+        const blob = await getReceiptPreview(receipt._id, controller.signal);
 
         if (blob.size === 0) {
           throw new Error("The PDF file is empty.");
@@ -83,14 +102,13 @@ export default function ReceiptDetailsDialog({
               });
 
         objectUrl = URL.createObjectURL(pdfBlob);
+        openedPdfUrlRef.current = objectUrl;
 
         setPdfUrl(objectUrl);
-      } catch (error) {
+      } catch {
         if (controller.signal.aborted) {
           return;
         }
-
-        console.error("Failed to load receipt PDF:", error);
 
         setPdfError(
           "The PDF preview could not be loaded. Please try again.",
@@ -107,11 +125,17 @@ export default function ReceiptDetailsDialog({
     return () => {
       controller.abort();
 
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
+      const urlToCleanup = objectUrl ?? openedPdfUrlRef.current;
+      if (urlToCleanup) {
+        if (openedPdfUrlRef.current === urlToCleanup) {
+          deferObjectUrlRevoke(urlToCleanup);
+        } else {
+          URL.revokeObjectURL(urlToCleanup);
+        }
+        openedPdfUrlRef.current = null;
       }
     };
-  }, [receipt]);
+  }, [receipt, isMobileLayout]);
 
   if (!receipt) {
     return null;
@@ -120,6 +144,34 @@ export default function ReceiptDetailsDialog({
   const isImage = receipt.fileType === "IMAGE";
   const isPdf = receipt.fileType === "PDF";
   const linkedTransaction = receipt.linkedTransaction;
+
+  const handleDownloadPdf = async () => {
+    if (!isPdf || isPdfDownloading) return;
+
+    setIsPdfDownloading(true);
+    try {
+      const blob = await getReceiptPreview(receipt._id);
+      if (blob.size === 0) throw new Error("Empty PDF response");
+
+      const pdfBlob = blob.type === "application/pdf"
+        ? blob
+        : new Blob([blob], { type: "application/pdf" });
+      const downloadUrl = URL.createObjectURL(pdfBlob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = getPdfDownloadName(receipt.originalFileName);
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      deferObjectUrlRevoke(downloadUrl);
+      toast.success("PDF downloaded successfully. Open it from your Downloads.");
+    } catch {
+      toast.error("Unable to download the PDF. Please try again.");
+    } finally {
+      setIsPdfDownloading(false);
+    }
+  };
 
   const handleOpenFile = () => {
     if (isImage) {
@@ -133,11 +185,8 @@ export default function ReceiptDetailsDialog({
     }
 
     if (isPdf && pdfUrl) {
-      window.open(
-        pdfUrl,
-        "_blank",
-        "noopener,noreferrer",
-      );
+      const newWindow = window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      if (newWindow) openedPdfUrlRef.current = pdfUrl;
     }
   };
 
@@ -196,7 +245,7 @@ export default function ReceiptDetailsDialog({
             </div>
           )}
 
-          {isPdf && isPdfLoading && (
+          {isPdf && !isMobileLayout && isPdfLoading && (
             <div
               className="flex h-[55vh] flex-col items-center justify-center gap-3"
               role="status"
@@ -213,7 +262,7 @@ export default function ReceiptDetailsDialog({
             </div>
           )}
 
-          {isPdf && !isPdfLoading && pdfUrl && (
+          {isPdf && !isMobileLayout && !isPdfLoading && pdfUrl && (
             <iframe
               title={`Preview of ${receipt.originalFileName}`}
               src={pdfUrl}
@@ -221,10 +270,9 @@ export default function ReceiptDetailsDialog({
             />
           )}
 
-          {isPdf && !isPdfLoading && pdfError && (
+          {isPdf && isMobileLayout && (
             <div
-              className="flex h-[55vh] flex-col items-center justify-center px-6 text-center"
-              role="alert"
+              className="flex min-h-[260px] flex-col items-center justify-center px-6 text-center"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
                 <FileText
@@ -234,16 +282,19 @@ export default function ReceiptDetailsDialog({
               </div>
 
               <h3 className="mt-4 font-semibold">
-                PDF preview unavailable
+                PDF preview isn’t available inside the app on mobile.
               </h3>
 
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                {pdfError}
+                Open the downloaded file from your Downloads.
               </p>
+            </div>
+          )}
 
-              <p className="mt-3 text-xs text-muted-foreground">
-                Check your connection and try opening the receipt again.
-              </p>
+          {isPdf && !isMobileLayout && !isPdfLoading && pdfError && (
+            <div className="flex h-[55vh] flex-col items-center justify-center px-6 text-center" role="alert">
+              <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+              <p className="mt-3 text-sm text-muted-foreground">Unable to preview this PDF.</p>
             </div>
           )}
         </div>
@@ -333,24 +384,31 @@ export default function ReceiptDetailsDialog({
           </div>
         </dl>
 
-        {/* Open file */}
-        <button
-          type="button"
-          disabled={isPdf && (!pdfUrl || isPdfLoading)}
-          onClick={handleOpenFile}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ExternalLink
-            className="h-4 w-4"
-            aria-hidden="true"
-          />
-
-          {isPdf
-            ? isPdfLoading
-              ? "Preparing PDF…"
-              : "Open PDF in new tab"
-            : "Open receipt file"}
-        </button>
+        {isPdf && isMobileLayout ? (
+          <button
+            type="button"
+            disabled={isPdfDownloading}
+            onClick={() => void handleDownloadPdf()}
+            aria-label={isPdfDownloading ? "Downloading PDF" : "Download PDF"}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isPdfDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Download className="h-4 w-4" aria-hidden="true" />
+            )}
+            {isPdfDownloading ? "Downloading…" : "Download PDF"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleOpenFile}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            {isPdf ? "Open PDF in new tab" : "Open receipt file"}
+          </button>
+        )}
       </section>
     </div>
   );

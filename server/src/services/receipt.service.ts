@@ -8,6 +8,7 @@ import {
   type ReceiptSourceType,
 } from "../constants/receipt";
 import { ApiError } from "../utils/ApiError";
+import { env } from "../config/env";
 import { Payment } from "../models/Payment";
 import { MaterialReceipt } from "../models/MaterialReceipt";
 import { Expense } from "../models/Expense";
@@ -517,6 +518,67 @@ export const getReceiptById = async (receiptId: string) => {
   }
 
   return serializeReceipt(receipt);
+};
+
+export const getReceiptPdfPreview = async (receiptId: string) => {
+  if (!Types.ObjectId.isValid(receiptId)) {
+    throw new ApiError(400, "Invalid receipt ID", "INVALID_RECEIPT_ID");
+  }
+
+  const receipt = await Receipt.findOne({ _id: receiptId, isDeleted: false })
+    .select("fileUrl fileType mimeType originalFileName");
+  if (!receipt) {
+    throw new ApiError(404, "Receipt not found", "RECEIPT_NOT_FOUND");
+  }
+  if (receipt.fileType !== "PDF" || receipt.mimeType !== "application/pdf") {
+    throw new ApiError(400, "Receipt is not a PDF", "RECEIPT_NOT_PDF");
+  }
+
+  let fileUrl: URL;
+  try {
+    fileUrl = new URL(receipt.fileUrl);
+  } catch {
+    throw new ApiError(502, "Receipt file is unavailable", "RECEIPT_STORAGE_ERROR");
+  }
+  if (
+    fileUrl.protocol !== "https:" ||
+    fileUrl.hostname !== "res.cloudinary.com" ||
+    fileUrl.username || fileUrl.password ||
+    !fileUrl.pathname.startsWith(`/${env.CLOUDINARY_CLOUD_NAME}/raw/upload/`)
+  ) {
+    throw new ApiError(502, "Receipt file is unavailable", "RECEIPT_STORAGE_ERROR");
+  }
+
+  const publicId = fileUrl.pathname
+    .slice(`/${env.CLOUDINARY_CLOUD_NAME}/raw/upload/`.length)
+    .replace(/^s--[^/]+--\//, "")
+    .replace(/^v\d+\//, "")
+    .replace(/\.pdf$/i, "");
+  if (!publicId || publicId.includes("..")) {
+    throw new ApiError(502, "Receipt file is unavailable", "RECEIPT_STORAGE_ERROR");
+  }
+
+  const privateUrl = cloudinary.utils.private_download_url(publicId, "pdf", {
+    resource_type: "raw",
+    type: "upload",
+    expires_at: Math.floor(Date.now() / 1000) + 60,
+  });
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(privateUrl, { redirect: "error" });
+  } catch {
+    throw new ApiError(502, "Receipt file could not be retrieved", "RECEIPT_STORAGE_ERROR");
+  }
+  if (!upstream.ok || !upstream.body) {
+    throw new ApiError(502, "Receipt file could not be retrieved", "RECEIPT_STORAGE_ERROR");
+  }
+
+  const filename = receipt.originalFileName
+    .replace(/[\\/\r\n\u0000-\u001f\u007f";]/g, "_")
+    .trim()
+    .slice(0, 180) || "receipt.pdf";
+  return { body: Buffer.from(await upstream.arrayBuffer()), filename };
 };
 
 export const linkReceipt = async (input: LinkReceiptInput) => {

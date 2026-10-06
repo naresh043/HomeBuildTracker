@@ -4,6 +4,7 @@ import {
   createReceipt,
   deleteReceipt,
   getReceiptById,
+  getReceiptPdfPreview,
   linkReceipt,
   listReceipts,
   restoreReceipt,
@@ -74,6 +75,22 @@ export const getReceiptController: RequestHandler = async (
     const receipt = await getReceiptById(validated.params.receiptId);
 
     return res.json(successResponse(receipt, "Receipt fetched successfully"));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getReceiptPdfPreviewController: RequestHandler = async (req, res, next) => {
+  try {
+    const validated = (req as any).validated;
+    const { body, filename } = await getReceiptPdfPreview(validated.params.receiptId);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${filename}"`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+    });
+    return res.send(body);
   } catch (error) {
     return next(error);
   }

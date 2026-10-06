@@ -81,6 +81,7 @@ export const API_ENDPOINTS = {
     base: "/receipts",
 
     byId: (receiptId: string) => `/receipts/${receiptId}`,
+    preview: (receiptId: string) => `/receipts/${receiptId}/preview`,
     link: (receiptId: string) => `/receipts/${receiptId}/link`,
     unlink: (receiptId: string) => `/receipts/${receiptId}/unlink`,
     restore: (receiptId: string) => `/receipts/${receiptId}/restore`,
