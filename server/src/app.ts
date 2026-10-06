@@ -33,9 +33,21 @@ app.use(helmet());
 /**
  * CORS
  */
+const allowedOrigins = [
+  env.CLIENT_URL,
+  "http://localhost:4173",
+];
+
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
