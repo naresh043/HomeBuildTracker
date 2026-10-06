@@ -43,6 +43,27 @@ type DashboardStageSummary = {
   completionDate?: Date | null;
 };
 
+type DashboardStage = {
+  id: Types.ObjectId;
+  name: string;
+  status: string;
+  order: number;
+  description: string | null;
+  startDate: Date | null;
+  completionDate: Date | null;
+};
+
+type ConstructionSummary = {
+  progress: number;
+  completedStages: number;
+  inProgressStages: number;
+  notStartedStages: number;
+  onHoldStages: number;
+  currentStage: DashboardStage | null;
+  lastCompletedStage: DashboardStage | null;
+  nextStage: DashboardStage | null;
+};
+
 type BudgetHealth =
   | "NO_BUDGET"
   | "BELOW_MINIMUM"
@@ -76,6 +97,22 @@ const toStageSummary = (
     description: stage.description ?? null,
     startDate: stage.startDate ?? null,
     completionDate: stage.completionDate ?? null,
+  };
+};
+
+const toConstructionStage = (
+  stage: DashboardStageSummary | null | undefined,
+): ConstructionSummary["currentStage"] => {
+  const summary = toStageSummary(stage);
+  if (!summary) return null;
+  return {
+    id: summary.id,
+    name: summary.name,
+    status: summary.status,
+    order: summary.order,
+    description: summary.description,
+    startDate: summary.startDate,
+    completionDate: summary.completionDate,
   };
 };
 
@@ -492,6 +529,16 @@ export const getDashboard = async (query: DashboardQuery) => {
   const nextStage = stages
     .filter((stage) => stage.status === CONSTRUCTION_STAGE_STATUS.NOT_STARTED)
     .reduce<(typeof stages)[number] | null>((earliest, stage) => !earliest || stage.order < earliest.order ? stage : earliest, null);
+  const construction: ConstructionSummary = {
+    progress: stageProgress,
+    completedStages,
+    inProgressStages,
+    notStartedStages,
+    onHoldStages,
+    currentStage: toConstructionStage(currentStage),
+    lastCompletedStage: toConstructionStage(lastCompletedStage),
+    nextStage: toConstructionStage(nextStage),
+  };
 
   const verifiedTotals = verificationAggregation.find((item) => item._id === PAYMENT_VERIFICATION_STATUS.VERIFIED);
   const needsVerificationTotals = verificationAggregation
@@ -787,12 +834,7 @@ export const getDashboard = async (query: DashboardQuery) => {
       startDate: house.startDate,
       currentStage: currentStageSummary,
     },
-    construction: {
-      currentStage: currentStageSummary,
-      lastCompletedStage: toStageSummary(lastCompletedStage ? { _id: lastCompletedStage._id, name: lastCompletedStage.name, status: lastCompletedStage.status, order: lastCompletedStage.order, description: lastCompletedStage.description ?? null, startDate: lastCompletedStage.startDate ?? null, completionDate: lastCompletedStage.completionDate ?? null } : null),
-      nextStage: toStageSummary(nextStage ? { _id: nextStage._id, name: nextStage.name, status: nextStage.status, order: nextStage.order, description: nextStage.description ?? null, startDate: nextStage.startDate ?? null, completionDate: nextStage.completionDate ?? null } : null),
-      totalStages, completedStages, inProgressStages, notStartedStages, onHoldStages, progress: stageProgress,
-    },
+    construction,
     financial: {
       totalPaid: toRupees(totalPaidPaise),
       totalSpending: toRupees(actualSpendingPaise),
