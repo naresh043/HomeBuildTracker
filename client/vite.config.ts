@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
-
+    
 export default defineConfig({
   plugins: [
     react(),
@@ -14,8 +14,8 @@ export default defineConfig({
 
       manifest: {
         id: "/dashboard",
-        name: "HomeBuild Tracker",
-        short_name: "HomeBuild",
+        name: "Sanjeev's HomeTracker",
+        short_name: "SanjeevHome",
         description: "Private family home construction and expense tracker",
         theme_color: "#0f172a",
         background_color: "#f8fafc",
