@@ -12,7 +12,6 @@ import type { ConstructionStage } from "@/features/stages/stage.types";
 
 import {
   CONSTRUCTION_STAGE_STATUS_LABELS,
-  formatConstructionStageDate,
 } from "@/features/stages/stage.utils";
 
 import {
@@ -57,6 +56,8 @@ const labelClassName = "mb-1.5 block text-sm font-medium text-foreground";
 
 const errorClassName = "mt-1 text-xs text-destructive";
 
+const toDateInputValue = (date?: string): string => date?.slice(0, 10) ?? "";
+
 export default function StageForm({
   stage,
   isSubmitting = false,
@@ -97,7 +98,8 @@ export default function StageForm({
     defaultValues: {
       name: stage?.name ?? "",
       status: stage?.status ?? "NOT_STARTED",
-      completionDate: stage?.completionDate ?? "",
+      startDate: toDateInputValue(stage?.startDate),
+      completionDate: toDateInputValue(stage?.completionDate),
       notes: stage?.notes ?? "",
     },
   });
@@ -126,7 +128,8 @@ export default function StageForm({
     updateForm.reset({
       name: stage.name,
       status: stage.status,
-      completionDate: stage.completionDate ?? "",
+      startDate: toDateInputValue(stage.startDate),
+      completionDate: toDateInputValue(stage.completionDate),
       notes: stage.notes ?? "",
     });
   }, [stage, createForm, updateForm]);
@@ -478,15 +481,32 @@ export default function StageForm({
               </div>
 
               {/* =================================================
-                  START DATE — DISPLAY ONLY
+                  START DATE
               ================================================= */}
 
               <div>
-                <label className={labelClassName}>Start date</label>
+                <label htmlFor="edit-stage-start-date" className={labelClassName}>
+                  Start date
+                </label>
 
-                <div className="flex min-h-11 items-center rounded-xl border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
-                  {formatConstructionStageDate(stage?.startDate)}
-                </div>
+                <Controller
+                  name="startDate"
+                  control={updateForm.control}
+                  render={({ field }) => (
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isSubmitting}
+                      placeholder="Select start date"
+                    />
+                  )}
+                />
+
+                {updateForm.formState.errors.startDate?.message && (
+                  <p className={errorClassName}>
+                    {updateForm.formState.errors.startDate.message}
+                  </p>
+                )}
               </div>
 
               {/* =================================================

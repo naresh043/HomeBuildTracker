@@ -69,6 +69,8 @@ export const updateStageSchema = z
 
     status: constructionStageStatusSchema.optional(),
 
+    startDate: z.string().trim().optional(),
+
     completionDate: z.string().trim().optional(),
 
     notes: z.string().trim().optional(),
@@ -84,6 +86,8 @@ export const updateStageSchema = z
         message: "Completion date is required when stage is completed",
       });
     }
+
+    validateStageDates(values, ctx);
   });
 
 export const reorderStagesSchema = z.object({

@@ -228,6 +228,7 @@ export default function ConstructionPage() {
         payload: {
           name: updateValues.name?.trim() || undefined,
           status: updateValues.status,
+          startDate: updateValues.startDate?.trim() || undefined,
           completionDate:
             updateValues.completionDate?.trim() || undefined,
           notes: updateValues.notes?.trim() || undefined,

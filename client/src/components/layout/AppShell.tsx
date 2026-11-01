@@ -38,9 +38,9 @@ const primaryNavigation = [
     icon: CreditCard,
   },
   {
-    label: "Materials",
-    path: "/materials",
-    icon: Package,
+    label: "Receipts",
+    path: "/receipts",
+    icon: FileText,
   },
   {
     label: "Expenses",
@@ -61,14 +61,14 @@ const secondaryNavigation = [
     icon: Building2,
   },
   {
+    label: "Materials",
+    path: "/materials",
+    icon: Package,
+  },
+  {
     label: "Material Receipts",
     path: "/material-receipts",
     icon: Truck,
-  },
-  {
-    label: "Receipts",
-    path: "/receipts",
-    icon: FileText,
   },
   {
     label: "Vendors",
@@ -175,7 +175,15 @@ function NavigationItem({
   );
 }
 
-function Sidebar({ onLogout, userName, userEmail }: { onLogout: () => void; userName?: string; userEmail?: string }) {
+function Sidebar({
+  onLogout,
+  userName,
+  userEmail,
+}: {
+  onLogout: () => void;
+  userName?: string;
+  userEmail?: string;
+}) {
   return (
     <aside className="hidden h-screen w-64 shrink-0 overflow-hidden border-r bg-background lg:flex lg:flex-col">
       {/* =====================================================
@@ -236,18 +244,24 @@ function Sidebar({ onLogout, userName, userEmail }: { onLogout: () => void; user
             <UserRound aria-hidden="true" className="h-4 w-4" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-foreground">{userName || "Signed in"}</span>
-            {userEmail && <span className="block truncate text-xs text-muted-foreground">{userEmail}</span>}
+            <span className="block truncate text-sm font-medium text-foreground">
+              {userName || "Signed in"}
+            </span>
+            {userEmail && (
+              <span className="block truncate text-xs text-muted-foreground">
+                {userEmail}
+              </span>
+            )}
           </span>
-        <button
-          type="button"
-          onClick={onLogout}
-          aria-label="Log out of your account"
-          title="Log out"
-          className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors duration-150 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <LogOut aria-hidden="true" className="h-[17px] w-[17px]" />
-        </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Log out of your account"
+            title="Log out"
+            className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors duration-150 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <LogOut aria-hidden="true" className="h-[17px] w-[17px]" />
+          </button>
         </div>
       </div>
     </aside>
@@ -371,7 +385,11 @@ export default function AppShell() {
             DESKTOP SIDEBAR
         =================================================== */}
 
-        <Sidebar onLogout={() => void handleLogout()} userName={user?.name} userEmail={user?.email} />
+        <Sidebar
+          onLogout={() => void handleLogout()}
+          userName={user?.name}
+          userEmail={user?.email}
+        />
 
         {/* ===================================================
             RIGHT APPLICATION AREA
@@ -463,24 +481,38 @@ export default function AppShell() {
                 aria-label="Mobile menu"
                 className="max-h-[calc(100vh-4rem-var(--mobile-nav-height))] space-y-1 overflow-y-auto p-4"
               >
-                {[...primaryNavigation, ...secondaryNavigation].map(
-                  (item) => (
-                    <NavigationItem
-                      key={item.path}
-                      {...item}
-                      onNavigate={() => setMobileMenuOpen(false)}
-                    />
-                  ),
-                )}
+                {[...primaryNavigation, ...secondaryNavigation].map((item) => (
+                  <NavigationItem
+                    key={item.path}
+                    {...item}
+                    onNavigate={() => setMobileMenuOpen(false)}
+                  />
+                ))}
 
                 <div aria-hidden="true" className="my-3 border-t" />
 
-                <div className="flex min-w-0 items-center gap-3 rounded-xl bg-muted/50 px-3 py-3" aria-label="Current account">
-                  <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted-foreground"><UserRound className="h-4 w-4" /></span>
+                <div
+                  className="flex min-w-0 items-center gap-3 rounded-xl bg-muted/50 px-3 py-3"
+                  aria-label="Current account"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-muted-foreground"
+                  >
+                    <UserRound className="h-4 w-4" />
+                  </span>
                   <span className="min-w-0">
-                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Account</span>
-                    <span className="block truncate text-sm font-medium">{user?.name || "Signed in"}</span>
-                    {user?.email && <span className="block truncate text-xs text-muted-foreground">{user.email}</span>}
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Account
+                    </span>
+                    <span className="block truncate text-sm font-medium">
+                      {user?.name || "Signed in"}
+                    </span>
+                    {user?.email && (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -526,11 +558,7 @@ export default function AppShell() {
           >
             <div className="mx-auto flex h-[var(--mobile-nav-height)] max-w-lg items-stretch">
               {primaryNavigation.map((item) => (
-                <NavigationItem
-                  key={item.path}
-                  {...item}
-                  mobile
-                />
+                <NavigationItem key={item.path} {...item} mobile />
               ))}
 
               <button
