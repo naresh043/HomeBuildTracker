@@ -33,7 +33,7 @@ export const formatConstructionStageDate = (date?: string): string => {
     return "Not set";
   }
 
-  const parsedDate = new Date(date);
+  const parsedDate = new Date(`${date.slice(0, 10)}T00:00:00`);
 
   if (Number.isNaN(parsedDate.getTime())) {
     return "Invalid date";
